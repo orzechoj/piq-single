@@ -11,7 +11,7 @@ print(args)
 commondir = args[1]
 jaspardir = args[2]
 id = as.double(args[3])
-outfile = args[4]
+outdir = args[4]
 
 source(commondir)
 
@@ -116,7 +116,7 @@ ncoords=chrstr[clengths>0]#names(coords)
 coords2=sapply(coords.short,flank,width=wsize,both=T)
 
 
-save(coords,coords.pwm,ipr,pwmin,pwmname,ustrs,chrstr,chrlens,clengths,coords.short,chrlens.short,ncoords,coords2,file=outfile)
+save(coords,coords.pwm,ipr,pwmin,pwmname,ustrs,chrstr,chrlens,clengths,coords.short,chrlens.short,ncoords,coords2,file=paste0(outdir,id,'.pwmout.RData'))
 
 #
 #####

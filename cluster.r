@@ -13,7 +13,7 @@ load(pwmdir)
 if(!fast.mode){
 source('covfun.r')
 
-load(paste0(bamdir,'background.chr1.RData'))
+load(paste0(tmpdir,'background.chr1.RData'))
 require(Matrix)
 
 bgwsize=10
@@ -105,7 +105,7 @@ tfun.sparse <- function(x,offsets){
 
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
-    load(paste0(bamdir,filename))
+    load(paste0(tmpdir,filename))
     if(!fast.mode){
         pm = t(rot.pos)%*%(pos.mat)
         nm = t(rot.neg)%*%(neg.mat)
@@ -136,10 +136,10 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     })
 }
 
-validpos = list.files(bamdir,'positive')
+validpos = list.files(tmpdir,'positive')
 allpos=do.call(c,lapply(validpos,makesvlite,label=1,minread=10,rot.pos=covmat.pos,rot.neg=covmat.neg))
 
-validneg = list.files(bamdir,'background')
+validneg = list.files(tmpdir,'background')
 allneg=do.call(c,lapply(validneg,makesvlite,label= -1,minread= -1, rot.pos=covmat.pos,rot.neg=covmat.neg))
 
 writeLines(c(allpos,allneg),paste0(tmpdir,'svlite.txt'))

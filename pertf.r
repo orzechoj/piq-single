@@ -11,7 +11,8 @@ commonfile = args[1]
 pwmdir = args[2]
 tmpdir = args[3]
 outdir = args[4]
-bamdir = args[5]
+bamfile = args[5]
 
+source('loadbam.r')
 source('cluster.r')
 source('bindcall.r')
