@@ -1,0 +1,23 @@
+##########
+# IMPORTANT - READ ME
+
+common.r -- MODIFY genome to fit your data, match bis("BSgenome.*") to your genome
+
+##########
+# How to run
+
+0). Make sure you can execute common.r without errors (this make sure your R is set up correctly).
+
+1). Generate the PWM hits across genome (does NOT depend on choice of bAM)
+
+example - 
+Rscript pwmmatch.r /cluster/thashim/basepiq/common.r /cluster/thashim/basepiq/pwms/jaspar.txt 141 /cluster/thashim/basepiq/tmp/pwmout.RData
+
+2). Convert BAM to internal binary format (does NOT depend on choice of motif).
+
+example - 
+Rscript bam2rdata.r /cluster/thashim/basepiq/common.r /cluster/thashim/basepiq/tmp/bams.RData /cluster/cwo/dnase_seq/bams/D0_50-100_130801.bwa.mapq20.mm10.bam
+
+3). Combine BAM + PWM to make calls, depends on choice of BAM and PWM. Make sure every TF has a unique tmp / output folder (they WILL overwrite eachother).
+
+Rscript pertf.r /cluster/thashim/basepiq/common.r /cluster/thashim/basepiq/tmp/pwmout.RData /cluster/thashim/basepiq/tmp/ /cluster/thashim/basepiq/output/
