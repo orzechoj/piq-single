@@ -2,17 +2,18 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(pwmdir)
+load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
+load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #outdir
 
 #####
 # make call
 
-load(paste0(tmpdir,'pwmout.RData'))
 
-validpos = list.files(tmpdir,'positive')
-chrids=match(sapply(strsplit(validpos,'.',fixed=T),function(i){i[2]}),ncoords)
+
+validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'))
+chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
 
 evalsvs <- function(pos.mat,neg.mat,wt){
     #svps=t(filtermat.pos%*%wt[(1:(2*wsize))+2])%*%pos.mat
@@ -22,17 +23,24 @@ evalsvs <- function(pos.mat,neg.mat,wt){
     svps + svns + wt[1] + (colSums(pos.mat>0)+colSums(neg.mat>0)) * wt[2]
 }
 
-neglis=do.call(c,lapply(list.files(tmpdir,'background'),function(i){
+posbgct = rep(0,2*wsize)
+
+neglis=do.call(c,lapply(list.files(tmpdir,paste0('background.tf',pwmid,'-')),function(i){
     print(i)
-    load(paste0(tmpdir,i))
+    load(file.path(tmpdir,i))
+    posbgct <<- posbgct + rowSums(pos.mat)
     as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
 }))
 
 rowsizes = rep(0,length(validpos))
+posct=rep(0,2*wsize)
+negct=rep(0,2*wsize)
 
 for(i in 1:length(validpos)){
     print(i)
-    load(paste0(tmpdir,validpos[i]))
+    load(file.path(tmpdir,validpos[i]))
+    posct = posct + rowSums(pos.mat)
+    negct = negct + rowSums(neg.mat)
     tct=colSums(pos.mat)+colSums(neg.mat)
     rowsizes[i]=ncol(pos.mat)
     pws=coords.pwm[[chrids[i]]]
@@ -50,11 +58,11 @@ readonecol <- function(filename,rowsize,colsel){
 }
 
 allsvs=do.call(c,lapply(1:length(validpos),function(i){
-    readonecol(paste0(outdir,ncoords[chrids[i]],'.out.bin'),rowsizes[i],1)
+    readonecol(file.path(outdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],1)
 }))
 
 allpws=do.call(c,lapply(1:length(validpos),function(i){
-    readonecol(paste0(outdir,ncoords[chrids[i]],'.out.bin'),rowsizes[i],3)
+    readonecol(file.path(outdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],3)
 }))
 
 

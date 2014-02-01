@@ -112,7 +112,7 @@ tfun.sparse <- function(x,offsets){
 
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
-    load(paste0(tmpdir,filename))
+    load(filename)
     if(!fast.mode){
         pm = t(rot.pos)%*%(pos.mat)
         nm = t(rot.neg)%*%(neg.mat)
@@ -143,13 +143,13 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     })
 }
 
-validpos = list.files(tmpdir,'positive')
-allpos=do.call(c,lapply(validpos,makesvlite,label=1,minread=10,rot.pos=covmat.pos,rot.neg=covmat.neg))
+validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
+allpos=do.call(c,lapply(validpos,makesvlite,label=1,minread=10,rot.pos=rot.pos,rot.neg=rot.neg))
 
-validneg = list.files(tmpdir,'background')
-allneg=do.call(c,lapply(validneg,makesvlite,label= -1,minread= -1, rot.pos=covmat.pos,rot.neg=covmat.neg))
+validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+allneg=do.call(c,lapply(validneg,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
 
-writeLines(c(allpos,allneg),paste0(tmpdir,'svlite.txt'))
+writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
 #
 #####
