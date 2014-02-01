@@ -2,7 +2,7 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(pwmdir)
+load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 #outdir
 
@@ -157,16 +157,10 @@ writeLines(c(allpos,allneg),paste0(tmpdir,'svlite.txt'))
 #####
 # calc fig
 
-sv.fit=sofia(paste0(tmpdir,'svlite.txt'),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=1,iterations=1e+08)
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=1,iterations=5e+07,learner_type='logreg-pegasos')
 sv.rotate = sv.fit$weights 
 
-svv=sv.fit$weights[((1:(4*wsize))+2)]+sv.fit$weights[2]
-
-pdf(paste0(outdir,'prof.pdf'))
-plot(svv,type='l')
-dev.off()
-
-save(sv.fit,sv.rotate,svv,file=paste0(tmpdir,'svout.RData'))
+save(sv.fit,sv.rotate,svv,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 #
 #####
