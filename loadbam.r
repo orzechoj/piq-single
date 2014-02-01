@@ -37,7 +37,7 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
 	uquery=floor(posset)
 	uoffset = (posset-uquery)*(2*wsize+1)
 	pos.triple = cbind(round(uquery),round(uoffset),tfun(rval))
-	pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)))
+	pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=F)
     #
         irn=IRanges(start=minuscoord,width=1)
         fos=findOverlaps(chrcoord,irn)
@@ -51,9 +51,10 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
 	uquery=floor(negset)
 	uoffset = (negset-uquery)*(2*wsize+1)
 	neg.triple = cbind(round(uquery),round(uoffset),tfun(rval))
-	neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)))
+	neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=F)
 #
         save(pos.mat,neg.mat,pos.triple,neg.triple,file=paste0(tmpdir,prefix,'tf',pwmid,'-',chr,'.RData'))
+	gc()
 	    }
 }
 

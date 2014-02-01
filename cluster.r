@@ -126,11 +126,12 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
     sapply(sel,function(i){
+        tct=rct[i]+1
+	if(tct > 1){
 	pid = posind[[i]][1,]
 	nid = negind[[i]][1,]
 	pval = posind[[i]][2,]
 	nval = negind[[i]][2,]
-        tct=rct[i]+1
         if(length(pid) > 0){
 	cpos = paste0(pid+1,':',pval)
 	}else{
@@ -140,16 +141,21 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
 	cneg = paste0(nid+1+2*wsize,':',nval)
 	}else{
 	cneg = character(0)
+	}}else{
+	cpos = character(0)
+	cneg = character(0)
 	}
         paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
     })
 }
 
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
-allpos=do.call(c,lapply(validpos,makesvlite,label=1,minread=10,rot.pos=rot.pos,rot.neg=rot.neg))
+vptrain=validpos
+allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10,rot.pos=rot.pos,rot.neg=rot.neg))
 
 validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
-allneg=do.call(c,lapply(validneg,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
+vntrain=validneg
+allneg=do.call(c,lapply(vntrain,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
 
 writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
@@ -159,10 +165,10 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 #####
 # calc fig
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=1,iterations=5e+07,learner_type='logreg-pegasos')
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=2,iterations=5e+07)
 sv.rotate = sv.fit$weights 
 
-save(sv.fit,sv.rotate,svv,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
+save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 #
 #####
