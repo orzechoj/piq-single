@@ -119,18 +119,23 @@ coords.vec=do.call(c,lapply(1:length(validpos),function(i){
 df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=allsvs,score=scores)
 df.bg=df.all[passed.cutoff,]
 
-write.csv(df.bg,file=paste0(outdir,'calls.csv'))
-write.csv(df.all,file=paste0(outdir,'calls.all.csv'))
+write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-calls.csv')))
+write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-calls.all.csv')))
 
 
-pdf(paste0(outdir,'diag.pdf'))
-plot(seq(0,10,by=stepsz),alloptim,type='l')
+pdf(file.path(outdir,paste0(pwmid,'-diag.pdf')))
+plot(purity,type='l')
+plot(sv.rotate[-(1:2)],type='l',main=pwmname,sub=paste(sv.rotate[1],sv.rotate[2],sep=':'))
+plot(posct,type='l')
+points(negct,col='red',type='l')
+points(posbgct,col='green',type='l')
+plot(seq(stepsz,10,by=stepsz),alloptim,type='l',main=num.passed)
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
 multhist(list(spos[spos > 0 & npos >0],npos[spos > 0 & npos > 0]),breaks=80)
-hist(allpws)
-hist(log(allsvs[allsvs>0]),100)
-plot(allpws,allsvs,pch=c('.',20)[passed.cutoff+1],log='y')
-points(sample(allpws,length(allpws)),neglis,pch='.',log='y',col='red')
+#hist(allpws)
+#hist(log(allsvs[allsvs>0]),100)
+plot(allpws,capf(allsvs),pch=c(46,20)[passed.cutoff+1])
+points(sample(allpws,length(allpws)),capf(neglis),pch='.',col='red')
 dev.off()
 
