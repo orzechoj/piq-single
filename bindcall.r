@@ -46,13 +46,13 @@ for(i in 1:length(validpos)){
     pws=coords.pwm[[chrids[i]]]
     sv.score = as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
     outputs=cbind(sv.score,tct,pws)
-    writeBin(as.vector(outputs),paste0(outdir,ncoords[chrids[i]],'.out.bin'),4)
+    writeBin(as.vector(outputs),file.path(outdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),8)
 }
 
 readonecol <- function(filename,rowsize,colsel){
     con=file(filename,open='rb')
-    seek(con,4*rowsize*(colsel-1))
-    rb=readBin(con,double(),n=rowsize,size=4)
+    seek(con,8*rowsize*(colsel-1))
+    rb=readBin(con,double(),n=rowsize,size=8)
     close(con)
     rb
 }
