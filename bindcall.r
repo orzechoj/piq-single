@@ -66,7 +66,7 @@ allpws=do.call(c,lapply(1:length(validpos),function(i){
 }))
 
 
-capf <- function(x,cap=min(c(neglis,allsvs))){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
+capf <- function(x,cap=(sv.rotate[1]+sv.rotate[2])){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
 #capf <- function(x,cap=0){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
 #capf <- function(x){x}
 
@@ -97,17 +97,19 @@ alloptim=sapply(seq(stepsz,10,by=stepsz),nenrich)#
 center=(which.min(alloptim))*stepsz
 opt.pwm.weight=optimize(nenrich,c(max(1e-5,center-stepsz),center+stepsz))
 
+erpen=1
+
 scores=allpws+capf(allsvs)*opt.pwm.weight$minimum
 neg.scores = pwb + capf(neglis)*opt.pwm.weight$minimum
-maxl=min(50000,length(scores))	
-enrich.ratio=(findInterval(sort(-scores)[50:maxl],sort(-neg.scores))+10)/(50:maxl)	
+maxl=length(scores)
+enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores))+10)/(1:maxl)	
 purity = 1/(enrich.ratio+1)
 num.passed=rev(which(purity>purity.cut))[1]+50
 if(is.na(num.passed)){num.passed=50}
 cutv=sort(scores,decreasing=T)[num.passed]
-passed.cutoff = scores >= cutv
+passed.cutoff = scores > cutv
 
-print(num.passed)
+#
 
 chrs.vec=do.call(c,lapply(1:length(validpos),function(i){
     rep(ncoords[chrids[i]],length(coords[[chrids[i]]]))
@@ -116,7 +118,7 @@ coords.vec=do.call(c,lapply(1:length(validpos),function(i){
     start(coords[[chrids[i]]])
 }))
 
-df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=allsvs,score=scores)
+df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=allsvs,score=scores,purity=purity)
 df.bg=df.all[passed.cutoff,]
 
 write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-calls.csv')))
@@ -132,7 +134,6 @@ points(posbgct,col='green',type='l')
 plot(seq(stepsz,10,by=stepsz),alloptim,type='l',main=num.passed)
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
-multhist(list(spos[spos > 0 & npos >0],npos[spos > 0 & npos > 0]),breaks=80)
 #hist(allpws)
 #hist(log(allsvs[allsvs>0]),100)
 plot(allpws,capf(allsvs),pch=c(46,20)[passed.cutoff+1])
