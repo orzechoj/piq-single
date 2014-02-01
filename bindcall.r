@@ -66,8 +66,9 @@ allpws=do.call(c,lapply(1:length(validpos),function(i){
 }))
 
 
-capf <- function(x,cap=2){y=x;y[y<0]=1e-10;log(y+1e-10)}
-
+capf <- function(x,cap=min(c(neglis,allsvs))){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
+#capf <- function(x,cap=0){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
+#capf <- function(x){x}
 
 nenrich <- function(x){
     opp=getopp(x)
@@ -80,7 +81,8 @@ getopp <- function(x){
     vcut=(pwb+capf(neglis)*x)
     svcut = sort(vcut)
     maxl=min(50000,length(sorted))
-    ops=(length(svcut)-findInterval(sorted[100:maxl],svcut)+10)/(100:maxl)
+    #ops=(length(svcut)-findInterval(sorted[100:maxl],svcut+1e-20)+10)/(100:maxl)
+    ops=(findInterval(-(sorted[100:maxl]),rev(-svcut))+10)/(100:maxl)	
     list(objective=min(ops),minimum=which.min(ops))
 }
 
@@ -91,13 +93,19 @@ lnsrch <- function(i,sorted,svcut,regr=100){
 pwb = sample(allpws,length(allpws))
 
 stepsz=0.1
-alloptim=sapply(seq(0,10,by=stepsz),nenrich)#
-opt.pwm.weight=optimize(nenrich,c(-stepsz,stepsz)+(which.min(alloptim)-1)*stepsz)
+alloptim=sapply(seq(stepsz,10,by=stepsz),nenrich)#
+center=(which.min(alloptim))*stepsz
+opt.pwm.weight=optimize(nenrich,c(max(1e-5,center-stepsz),center+stepsz))
 
 scores=allpws+capf(allsvs)*opt.pwm.weight$minimum
-num.passed=getopp(opt.pwm.weight$minimum)$minimum+100-1
-cutoff.val=sort(scores,decreasing=T)[num.passed]
-passed.cutoff=scores > cutoff.val
+neg.scores = pwb + capf(neglis)*opt.pwm.weight$minimum
+maxl=min(50000,length(scores))	
+enrich.ratio=(findInterval(sort(-scores)[50:maxl],sort(-neg.scores))+10)/(50:maxl)	
+purity = 1/(enrich.ratio+1)
+num.passed=rev(which(purity>purity.cut))[1]+50
+if(is.na(num.passed)){num.passed=50}
+cutv=sort(scores,decreasing=T)[num.passed]
+passed.cutoff = scores >= cutv
 
 print(num.passed)
 
