@@ -10,18 +10,23 @@ load(pwmdir)
 #####
 # make bg
 
-if(!fast.mode){
+load(file.path(tmpdir,paste0('background.tf',pwmid,'-chr1.RData')))
+
+#require at least 30k sites to do a background estimate
+if((ncol(pos.mat) > 30000) & (!fast.mode)){
+
 source('covfun.r')
 
-load(paste0(tmpdir,'background.chr1.RData'))
 require(Matrix)
 
-bgwsize=10
+bgwsize=2
+alldat=do.call(rbind,lapply(seq(1,ncol(pos.mat),by=max(bgwsize,ncol(pos.mat)/500)),function(offs){
+	datin = t(rBind(pos.mat[1:bgwsize+offs,],neg.mat[1:bgwsize+offs,]))^2
+	datin[datin>2]=2
+	as.matrix(datin)
+}))
 
-datin = t(rBind(pos.mat[1:bgwsize,],neg.mat[1:bgwsize,]))
-datin[datin>2]=2
-
-mean(neg.mat)
+datin=alldat
 
 stabval=4
 mustab=-3
@@ -47,7 +52,7 @@ for(m in 1:5){
     sqmuT=matrix(0,ncol(covin),ncol(covin))
     muT=rep(0,ncol(covin))
     tct=0
-    numex=min(nrow(datin),10000)
+    numex=min(nrow(datin),50000)
     for(i in sample(1:nrow(datin),numex)){
         #print(i)
         ff=fastFit(datin[i,],mupri,tabs[[1]],tabs[[2]],scid)
@@ -79,18 +84,20 @@ for(m in 1:5){
 }
 
 spp = toepvals(cpost,bind)
-w.both = wsize*2
+w.both = 100
 mb=makeblocks(1:w.both,1)[1:bgwsize]
-covmat.pos=toeptomat(spp[1:bgwsize],mb,w.both)
-covmat.neg=toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both)
+covmat.pos=solve(toeptomat(spp[1:bgwsize],mb,w.both))
+covmat.neg=solve(toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both))
 
-scmat.pos=solve(covmat.pos)
-scmat.neg=solve(covmat.neg)
+pv=toepvals(covmat.pos,mb)
+nv=toepvals(covmat.neg,mb)
+
+rot.pos=toeptomat(pv/pv[1],mb,2*wsize)
+rot.neg=toeptomat(nv/nv[1],mb,2*wsize)
+
 }else{
-    covmat.pos = diag(wsize*2)
-    covmat.neg = diag(wsize*2)
-    scmat.neg = diag(wsize*2)
-    scmat.pos = diag(wsize*2)
+	rot.pos = diag(wsize*2)	
+	rot.neg = diag(wsize*2)	
 }
 
 
