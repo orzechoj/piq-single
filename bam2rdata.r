@@ -22,5 +22,14 @@ plusstrand = readBamGappedAlignments(bamname,param=plusflags)
 minusflags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isMinusStrand=T,isDuplicate=F,isNotPassingQualityControls=F))
 minusstrand = readBamGappedAlignments(bamname,param=minusflags)
 
-save(plusstrand,minusstrand,file=bamout)
+obschrnames=levels(c(seqnames(plusstrand),seqnames(minusstrand)))	
+allreads=lapply(obschrnames,function(chr){
+	print(chr)	
+	pluscoord=start(plusstrand[seqnames(plusstrand)==chr])
+        minuscoord=start(minusstrand[seqnames(minusstrand)==chr])
+	list(plus=pluscoord,minus=minuscoord)
+})
+names(allreads)=obschrnames
+
+save(allreads,file=bamout)
 

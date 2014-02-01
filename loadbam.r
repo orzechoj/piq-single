@@ -4,52 +4,57 @@ source(commonfile)
 #bamfile
 load(bamfile)
 #pwmfile
-load(pwmdir)
+load(paste0(pwmdir,pwmid,'.pwmout.RData'))
 #tmpdir 
 
+#stablize the variance (helps when there are few high coverage sites).
 tfun <- function(x){
     y = x
-    y[x>0] = 2*sqrt(x[x>0] + 3/8)
+    y[x>0] = sqrt(x[x>0])
     y
 }
 
+
+
 makeTFmatrix <- function(coords,prefix='',offset=0){
     cwidth = width(coords[[1]][1])
-    obschrnames=levels(c(seqnames(plusstrand),seqnames(minusstrand)))
+    obschrnames=names(allreads)
     validchr = obschrnames[which(obschrnames%in%ncoords)]
     for(chr in validchr){
+    print(chr)
         chrcoord=shift(coords[[chr]],offset)
-        print(chr)
-        pluscoord=start(plusstrand[seqnames(plusstrand)==chr])
-        minuscoord=start(minusstrand[seqnames(minusstrand)==chr])
+	pluscoord=allreads[[chr]]$plus
+	minuscoord=allreads[[chr]]$minus
         irp=IRanges(start=pluscoord,width=1)
         fos=findOverlaps(chrcoord,irp)
         pos.unique.hits = unique(queryHits(fos))
         pos.offset=pluscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
         ubd=findInterval(c(0,pos.unique.hits),queryHits(fos))
-        pos.offsets=lapply(1:(length(pos.unique.hits)),function(id){
-            reads=pos.offset[(ubd[id]+1):ubd[id+1]]
-            reads.rle=rle(reads)
-            cbind(pos.unique.hits[id],reads.rle$values,tfun(reads.rle$lengths))
-        })
-        pos.matrix=do.call(rbind,pos.offsets)
+	rre = rle(pos.offset/(2*wsize+1)+queryHits(fos))	
+	rval= rre$lengths
+	rre$lengths = rep(1,length(rre$lengths))
+	posset = inverse.rle(rre)
+	uquery=floor(posset)
+	uoffset = (posset-uquery)*(2*wsize+1)
+	pos.triple = cbind(round(uquery),round(uoffset),tfun(rval))
+	pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)))
     #
         irn=IRanges(start=minuscoord,width=1)
         fos=findOverlaps(chrcoord,irn)
         neg.unique.hits = unique(queryHits(fos))
         neg.offset=minuscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
         ubd=findInterval(c(0,neg.unique.hits),queryHits(fos))
-        neg.offsets=lapply(1:(length(neg.unique.hits)),function(id){
-            reads=neg.offset[(ubd[id]+1):ubd[id+1]]
-            reads.rle=rle(reads)
-            cbind(neg.unique.hits[id],reads.rle$values,tfun(reads.rle$lengths))
-        })
-        neg.matrix=do.call(rbind,neg.offsets)
+	rre = rle(neg.offset/(2*wsize+1)+queryHits(fos))	
+	rval= rre$lengths
+	rre$lengths = rep(1,length(rre$lengths))
+	negset = inverse.rle(rre)
+	uquery=floor(negset)
+	uoffset = (negset-uquery)*(2*wsize+1)
+	neg.triple = cbind(round(uquery),round(uoffset),tfun(rval))
+	neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)))
 #
-        pos.mat = sparseMatrix(i=pos.matrix[,2],j=pos.matrix[,1],x=pos.matrix[,3],dims=c(cwidth,length(chrcoord)))
-        neg.mat = sparseMatrix(i=neg.matrix[,2],j=neg.matrix[,1],x=neg.matrix[,3],dims=c(cwidth,length(chrcoord)))
-        save(pos.mat,neg.mat,pos.offsets,neg.offsets,file=paste0(tmpdir,prefix,chr,'.RData'))
-    }
+        save(pos.mat,neg.mat,pos.triple,neg.triple,file=paste0(tmpdir,prefix,'tf',pwmid,'-',chr,'.RData'))
+	    }
 }
 
 makeTFmatrix(coords2,'positive.')
