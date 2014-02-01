@@ -73,10 +73,10 @@ strs=sapply(passcut,function(i){
 })
 ustrs=unique(strs)
 
+if(length(ustrs)>0){
+
 #calculate chr offsets
 chrstr = seqnames(genome)
-chrlens=sapply(chrstr,function(i){length(genome[[i]])})
-chroffs=cumsum(c(0,chrlens))
 
 #find motif matches
 pd=PDict(ustrs)
@@ -110,13 +110,17 @@ coords.pwm=lapply(coords.pwm,function(i){i[i>pwmcut2]})
 
 clengths=sapply(coords,length)
 coords.short=coords[clengths>0]
-chrlens.short=chrlens[clengths>0]
 names(coords.short)=chrstr[clengths>0]
 ncoords=chrstr[clengths>0]#names(coords)
 coords2=sapply(coords.short,flank,width=wsize,both=T)
 
 
-save(coords,coords.pwm,ipr,pwmin,pwmname,ustrs,chrstr,chrlens,clengths,coords.short,chrlens.short,ncoords,coords2,file=paste0(outdir,id,'.pwmout.RData'))
+save(coords,coords.pwm,ipr,pwmin,pwmname,ustrs,chrstr,clengths,coords.short,ncoords,coords2,file=paste0(outdir,id,'.pwmout.RData'))
+
+}else{
+clengths=0
+save(clengths,file=paste0(outdir,id,'.pwmout.RData'))
+}
 
 #
 #####
