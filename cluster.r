@@ -105,41 +105,43 @@ rot.neg=toeptomat(nv/nv[1],mb,2*wsize)
 # make svlite
 
 
-tfun.sparse <- function(x,offsets){
-    tmp=do.call(rbind,offsets)
-    x[tmp[,1:2]]=tfun(tmp[,3])
-}
+
 
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
     if(!fast.mode){
-        pm = t(rot.pos)%*%(pos.mat)
-        nm = t(rot.neg)%*%(neg.mat)
+        pm = t(rot.pos)%*%pos.mat
+        nm = t(rot.neg)%*%neg.mat
     }else{
         pm = (pos.mat)
         nm = (neg.mat)
     }
     posind=apply(pm,2,function(j){
-        i=j
-        rbind(which(i!=0),i[i!=0])
+        rbind(which(j!=0),j[j!=0])
     })
     negind=apply(nm,2,function(j){
-        i=j
-        rbind(which(i!=0),i[i!=0])
+        rbind(which(j!=0),j[j!=0])
     })
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
     sapply(sel,function(i){
+	pid = posind[[i]][1,]
+	nid = negind[[i]][1,]
+	pval = posind[[i]][2,]
+	nval = negind[[i]][2,]
         tct=rct[i]+1
-        if(tct > 0){
-            paste0(c(label,
-                     paste0(1,":",tct),
-                     paste0(posind[[i]][1,]+1,':',posind[[i]][2,]),
-                     paste0(negind[[i]][1,]+1+2*wsize,':',negind[[i]][2,])),collapse=' ')
-        }else{
-            paste0(c(label,"1:1"),collapse=' ')
-        }
+        if(length(pid) > 0){
+	cpos = paste0(pid+1,':',pval)
+	}else{
+	cpos = character(0)
+	}
+	if(length(nid) > 0){
+	cneg = paste0(nid+1+2*wsize,':',nval)
+	}else{
+	cneg = character(0)
+	}
+        paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
     })
 }
 

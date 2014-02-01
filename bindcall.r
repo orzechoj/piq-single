@@ -20,7 +20,7 @@ evalsvs <- function(pos.mat,neg.mat,wt){
     svps=wt[(1:(2*wsize))+2]%*%pos.mat
     #svns=t(filtermat.neg%*%wt[(2*wsize+1):(4*wsize)+2])%*%neg.mat
     svns=wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat
-    svps + svns + wt[1] + (colSums(pos.mat>0)+colSums(neg.mat>0)) * wt[2]
+    svps + svns + wt[1] + (colSums(pos.mat>0)+colSums(neg.mat>0)+1) * wt[2]
 }
 
 posbgct = rep(0,2*wsize)
