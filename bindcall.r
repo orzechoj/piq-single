@@ -11,7 +11,7 @@ load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 # make call
 
 osvr=order(-sv.rotate)
-sv.rotate[osvr[1:(2*ncol(pwmin))]]=0
+sv.rotate[osvr[1:(2*ncol(pwmin))]] = sort(sv.rotate,decreasing=T)[(2*ncol(pwmin)+1)]
 
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'))
 chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
@@ -132,7 +132,6 @@ xseq=seq(1,length(purity),length=1000)
 plot(xseq,purity[xseq],type='l',xlab='n',ylab='purity')
 plot(sv.rotate[-(1:2)],type='l',main=pwmname,sub=paste(sv.rotate[1],sv.rotate[2],sep=':'),xlab='pos',ylab='score')
 abline(h=0,col='red')
-abline(v=osvr[1:(2*ncol(pwmin))],col='blue')
 plot(posct,type='l',xlab='pos',ylab='counts')
 points(negct,col='red',type='l')
 points(posbgct,col='green',type='l')
