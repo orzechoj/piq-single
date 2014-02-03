@@ -10,7 +10,8 @@ load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #####
 # make call
 
-
+osvr=order(-sv.rotate)
+sv.rotate[osvr[1:(2*ncol(pwmin))]]=0
 
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'))
 chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
