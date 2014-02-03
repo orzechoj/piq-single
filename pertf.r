@@ -14,9 +14,11 @@ outdir = args[4]
 bamfile = args[5]
 pwmid = args[6]
 
+source('utils/copybam.r')
 load(paste0(pwmdir,pwmid,'.pwmout.RData'))
 if(sum(clengths[1])>0){
 source('loadbam.r')	
 source('cluster.r')
 source('bindcall.r')
 }
+

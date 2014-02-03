@@ -3,7 +3,6 @@
 #example:
 #Rscript pwmmatch.r /cluster/thashim/basepiq/common.r /cluster/thashim/basepiq/pwms/jaspar.txt 141 /cluster/thashim/basepiq/tmp/pwmout.RData
 
-
 options(echo=TRUE)
 args <- commandArgs(trailingOnly = TRUE)
 print(args)

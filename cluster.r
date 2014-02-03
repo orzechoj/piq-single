@@ -2,7 +2,7 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
+#load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 #outdir
 
@@ -44,7 +44,6 @@ scid = solve(sci+diag(rep(tabs[[2]][1],sz)))
 
 for(m in 1:5){
     print(m)
-                                        #
     musum=rep(0,ncol(covin))
     devsum=0
     muevsum=0

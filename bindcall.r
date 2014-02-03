@@ -2,7 +2,7 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
+#load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #outdir
@@ -46,7 +46,7 @@ for(i in 1:length(validpos)){
     pws=coords.pwm[[chrids[i]]]
     sv.score = as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
     outputs=cbind(sv.score,tct,pws)
-    writeBin(as.vector(outputs),file.path(outdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),8)
+    writeBin(as.vector(outputs),file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),8)
 }
 
 readonecol <- function(filename,rowsize,colsel){
@@ -58,14 +58,15 @@ readonecol <- function(filename,rowsize,colsel){
 }
 
 allsvs=do.call(c,lapply(1:length(validpos),function(i){
-    readonecol(file.path(outdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],1)
+    readonecol(file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],1)
 }))
 
 allpws=do.call(c,lapply(1:length(validpos),function(i){
-    readonecol(file.path(outdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],3)
+    readonecol(file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],3)
 }))
 
 
+#capf <- function(x,cap=min(c(neglis,allsvs))){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
 capf <- function(x,cap=(sv.rotate[1]+sv.rotate[2])){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
 #capf <- function(x,cap=0){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
 #capf <- function(x){x}
@@ -102,7 +103,7 @@ erpen=1
 scores=allpws+capf(allsvs)*opt.pwm.weight$minimum
 neg.scores = pwb + capf(neglis)*opt.pwm.weight$minimum
 maxl=length(scores)
-enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores))+10)/(1:maxl)	
+enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores)))/(1:maxl)	
 purity = 1/(enrich.ratio+1)
 num.passed=rev(which(purity>purity.cut))[1]+50
 if(is.na(num.passed)){num.passed=50}
