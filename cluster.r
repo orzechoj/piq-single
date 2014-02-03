@@ -116,12 +116,20 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
         pm = (pos.mat)
         nm = (neg.mat)
     }
+    if(ncol(pm)>1){
     posind=apply(pm,2,function(j){
         rbind(which(j!=0),j[j!=0])
     })
+    }else{
+    posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
+    }
+    if(ncol(nm)>1){
     negind=apply(nm,2,function(j){
         rbind(which(j!=0),j[j!=0])
     })
+    }else{
+    negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))	
+    }
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
     sapply(sel,function(i){
