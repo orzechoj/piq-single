@@ -128,17 +128,21 @@ write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-calls.all.csv')))
 
 
 pdf(file.path(outdir,paste0(pwmid,'-diag.pdf')))
-plot(purity,type='l')
-plot(sv.rotate[-(1:2)],type='l',main=pwmname,sub=paste(sv.rotate[1],sv.rotate[2],sep=':'))
-plot(posct,type='l')
+xseq=seq(1,length(purity),length=1000)
+plot(xseq,purity[xseq],type='l',xlab='n',ylab='purity')
+plot(sv.rotate[-(1:2)],type='l',main=pwmname,sub=paste(sv.rotate[1],sv.rotate[2],sep=':'),xlab='pos',ylab='score')
+abline(h=0,col='red')
+abline(v=osvr[1:(2*ncol(pwmin))],col='blue')
+plot(posct,type='l',xlab='pos',ylab='counts')
 points(negct,col='red',type='l')
 points(posbgct,col='green',type='l')
-plot(seq(stepsz,10,by=stepsz),alloptim,type='l',main=num.passed)
+legend('topright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
+plot(seq(stepsz,10,by=stepsz),alloptim,type='l',main=num.passed,xlab='pwm weight',ylab='purity')
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
 #hist(allpws)
 #hist(log(allsvs[allsvs>0]),100)
-plot(allpws,capf(allsvs),pch=c(46,20)[passed.cutoff+1])
-points(sample(allpws,length(allpws)),capf(neglis),pch='.',col='red')
+samp=sample(1:length(allpws),50000,replace=T)
+plot(allpws[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1])
+points(pwb[samp],capf(neglis[samp]),pch='.',col='red')
 dev.off()
-
