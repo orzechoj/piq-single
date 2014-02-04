@@ -136,7 +136,10 @@ plot(posct,type='l',xlab='pos',ylab='counts')
 points(negct,col='red',type='l')
 points(posbgct,col='green',type='l')
 legend('topright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
-plot(seq(stepsz,10,by=stepsz),alloptim,type='l',main=num.passed,xlab='pwm weight',ylab='purity')
+plot(seq(stepsz,10,by=stepsz),1/(1+alloptim),type='l',main=num.passed,xlab='pwm weight',ylab='purity')
+plot(density(scores),type='l',xlab='score')
+points(density(neg.scores),type='l',col='red')
+abline(v=cutv)
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
 #hist(allpws)
