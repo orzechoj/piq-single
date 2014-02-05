@@ -36,11 +36,11 @@ set.seed(1)
 ####
 # dependencies
 require('BiocInstaller')
-bis("BSgenome.Mmusculus.UCSC.mm10")
+#bis("BSgenome.Mmusculus.UCSC.mm10")
+bis("BSgenome.Hsapiens.UCSC.hg19")
 bis("Rsamtools")
 bis('Biostrings')
 
-ris('plotrix')
 ris('RSofia')
 ris('statmod')
 require(Matrix)
@@ -64,8 +64,10 @@ wsize = 1000
 #fast mode
 fast.mode = T
 
+#purity of calls
+purity.cut = 0.7
+
 # load genome file
 
-genome = Mmusculus
-
+genome = Hsapiens
 

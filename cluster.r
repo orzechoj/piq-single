@@ -2,7 +2,7 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(pwmdir)
+#load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 #outdir
 
@@ -10,18 +10,23 @@ load(pwmdir)
 #####
 # make bg
 
-if(!fast.mode){
+load(file.path(tmpdir,paste0('background.tf',pwmid,'-chr1.RData')))
+
+#require at least 30k sites to do a background estimate
+if((ncol(pos.mat) > 30000) & (!fast.mode)){
+
 source('covfun.r')
 
-load(paste0(tmpdir,'background.chr1.RData'))
 require(Matrix)
 
-bgwsize=10
+bgwsize=2
+alldat=do.call(rbind,lapply(seq(1,ncol(pos.mat),by=max(bgwsize,ncol(pos.mat)/500)),function(offs){
+	datin = t(rBind(pos.mat[1:bgwsize+offs,],neg.mat[1:bgwsize+offs,]))^2
+	datin[datin>2]=2
+	as.matrix(datin)
+}))
 
-datin = t(rBind(pos.mat[1:bgwsize,],neg.mat[1:bgwsize,]))
-datin[datin>2]=2
-
-mean(neg.mat)
+datin=alldat
 
 stabval=4
 mustab=-3
@@ -39,7 +44,6 @@ scid = solve(sci+diag(rep(tabs[[2]][1],sz)))
 
 for(m in 1:5){
     print(m)
-                                        #
     musum=rep(0,ncol(covin))
     devsum=0
     muevsum=0
@@ -47,7 +51,7 @@ for(m in 1:5){
     sqmuT=matrix(0,ncol(covin),ncol(covin))
     muT=rep(0,ncol(covin))
     tct=0
-    numex=min(nrow(datin),10000)
+    numex=min(nrow(datin),50000)
     for(i in sample(1:nrow(datin),numex)){
         #print(i)
         ff=fastFit(datin[i,],mupri,tabs[[1]],tabs[[2]],scid)
@@ -79,70 +83,84 @@ for(m in 1:5){
 }
 
 spp = toepvals(cpost,bind)
-w.both = wsize*2
+w.both = 100
 mb=makeblocks(1:w.both,1)[1:bgwsize]
-covmat.pos=toeptomat(spp[1:bgwsize],mb,w.both)
-covmat.neg=toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both)
+covmat.pos=solve(toeptomat(spp[1:bgwsize],mb,w.both))
+covmat.neg=solve(toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both))
 
-scmat.pos=solve(covmat.pos)
-scmat.neg=solve(covmat.neg)
+pv=toepvals(covmat.pos,mb)
+nv=toepvals(covmat.neg,mb)
+
+rot.pos = matrix(0,wsize*2,wsize*2)
+rot.pos[lower.tri(rot.pos,diag=T)]=pv[1]/max(pv)
+rot.neg = matrix(0,wsize*2,wsize*2)
+rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
+
 }else{
-    covmat.pos = diag(wsize*2)
-    covmat.neg = diag(wsize*2)
-    scmat.neg = diag(wsize*2)
-    scmat.pos = diag(wsize*2)
+	rot.pos = diag(wsize*2)	
+	rot.neg = diag(wsize*2)	
 }
+
 
 
 #####
 # make svlite
 
 
-tfun.sparse <- function(x,offsets){
-    tmp=do.call(rbind,offsets)
-    x[tmp[,1:2]]=tfun(tmp[,3])
-}
-
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
-    load(paste0(tmpdir,filename))
-    if(!fast.mode){
-        pm = t(rot.pos)%*%(pos.mat)
-        nm = t(rot.neg)%*%(neg.mat)
-    }else{
-        pm = (pos.mat)
-        nm = (neg.mat)
-    }
+    load(filename)
+        pm = t(rot.pos)%*%pos.mat
+        nm = t(rot.neg)%*%neg.mat
+    if(ncol(pm)>1){
     posind=apply(pm,2,function(j){
-        i=j
-        rbind(which(i!=0),i[i!=0])
+        rbind(which(j!=0),j[j!=0])
     })
+    }else{
+    posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
+    }
+    if(ncol(nm)>1){
     negind=apply(nm,2,function(j){
-        i=j
-        rbind(which(i!=0),i[i!=0])
+        rbind(which(j!=0),j[j!=0])
     })
+    }else{
+    negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))	
+    }
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
     sapply(sel,function(i){
         tct=rct[i]+1
-        if(tct > 0){
-            paste0(c(label,
-                     paste0(1,":",tct),
-                     paste0(posind[[i]][1,]+1,':',posind[[i]][2,]),
-                     paste0(negind[[i]][1,]+1+2*wsize,':',negind[[i]][2,])),collapse=' ')
-        }else{
-            paste0(c(label,"1:1"),collapse=' ')
-        }
+	if(tct > 1){
+	pid = posind[[i]][1,]
+	nid = negind[[i]][1,]
+	pval = posind[[i]][2,]
+	nval = negind[[i]][2,]
+        if(length(pid) > 0){
+	cpos = paste0(pid+1,':',pval)
+	}else{
+	cpos = character(0)
+	}
+	if(length(nid) > 0){
+	cneg = paste0(nid+1+2*wsize,':',nval)
+	}else{
+	cneg = character(0)
+	}}else{
+	cpos = character(0)
+	cneg = character(0)
+	}
+        paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
     })
 }
 
-validpos = list.files(tmpdir,'positive')
-allpos=do.call(c,lapply(validpos,makesvlite,label=1,minread=10,rot.pos=covmat.pos,rot.neg=covmat.neg))
+validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
+vptrain=validpos
+allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10,rot.pos=rot.pos,rot.neg=rot.neg))
 
-validneg = list.files(tmpdir,'background')
-allneg=do.call(c,lapply(validneg,makesvlite,label= -1,minread= -1, rot.pos=covmat.pos,rot.neg=covmat.neg))
+validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+vntrain=validneg
+allneg=do.call(c,lapply(vntrain,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
 
-writeLines(c(allpos,allneg),paste0(tmpdir,'svlite.txt'))
+writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
 #
 #####
@@ -150,16 +168,12 @@ writeLines(c(allpos,allneg),paste0(tmpdir,'svlite.txt'))
 #####
 # calc fig
 
-sv.fit=sofia(paste0(tmpdir,'svlite.txt'),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=1,iterations=1e+08)
-sv.rotate = sv.fit$weights 
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=0.1,iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+vpos=as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))]))
+vneg=as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)]))
+sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
-svv=sv.fit$weights[((1:(4*wsize))+2)]+sv.fit$weights[2]
-
-pdf(paste0(outdir,'prof.pdf'))
-plot(svv,type='l')
-dev.off()
-
-save(sv.fit,sv.rotate,svv,file=paste0(tmpdir,'svout.RData'))
+save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 #
 #####
