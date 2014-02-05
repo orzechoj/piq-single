@@ -41,7 +41,6 @@ bis("BSgenome.Hsapiens.UCSC.hg19")
 bis("Rsamtools")
 bis('Biostrings')
 
-ris('plotrix')
 ris('RSofia')
 ris('statmod')
 require(Matrix)

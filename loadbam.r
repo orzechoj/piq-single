@@ -14,7 +14,7 @@ tfun <- function(x){
     y
 }
 
-
+unlink(paste0(tmpdir,'*tf',pwmid,'*'))
 
 makeTFmatrix <- function(coords,prefix='',offset=0){
     cwidth = width(coords[[1]][1])

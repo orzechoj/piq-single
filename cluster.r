@@ -91,8 +91,10 @@ covmat.neg=solve(toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both))
 pv=toepvals(covmat.pos,mb)
 nv=toepvals(covmat.neg,mb)
 
-rot.pos=toeptomat(pv/pv[1],mb,2*wsize)
-rot.neg=toeptomat(nv/nv[1],mb,2*wsize)
+rot.pos = matrix(0,wsize*2,wsize*2)
+rot.pos[lower.tri(rot.pos,diag=T)]=pv[1]/max(pv)
+rot.neg = matrix(0,wsize*2,wsize*2)
+rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
 
 }else{
 	rot.pos = diag(wsize*2)	
@@ -100,22 +102,16 @@ rot.neg=toeptomat(nv/nv[1],mb,2*wsize)
 }
 
 
+
 #####
 # make svlite
-
-
 
 
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
-    if(!fast.mode){
         pm = t(rot.pos)%*%pos.mat
         nm = t(rot.neg)%*%neg.mat
-    }else{
-        pm = (pos.mat)
-        nm = (neg.mat)
-    }
     if(ncol(pm)>1){
     posind=apply(pm,2,function(j){
         rbind(which(j!=0),j[j!=0])
@@ -172,8 +168,10 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 #####
 # calc fig
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=2,iterations=5e+07,learner_type='logreg-pegasos')
-sv.rotate = sv.fit$weights 
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=0.1,iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+vpos=as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))]))
+vneg=as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)]))
+sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
 save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 

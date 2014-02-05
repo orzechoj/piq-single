@@ -92,10 +92,11 @@ lnsrch <- function(i,sorted,svcut,regr=100){
     (length(svcut)-findInterval(sorted[i],svcut)+regr)/i
 }
 
+set.seed(1)
 pwb = sample(allpws,length(allpws))
 
 stepsz=0.1
-alloptim=sapply(seq(stepsz,10,by=stepsz),nenrich)#
+alloptim=sapply(seq(stepsz,50,by=stepsz),nenrich)#
 center=(which.min(alloptim))*stepsz
 opt.pwm.weight=optimize(nenrich,c(max(1e-5,center-stepsz),center+stepsz))
 
@@ -136,9 +137,10 @@ plot(posct,type='l',xlab='pos',ylab='counts')
 points(negct,col='red',type='l')
 points(posbgct,col='green',type='l')
 legend('topright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
-plot(seq(stepsz,10,by=stepsz),1/(1+alloptim),type='l',main=num.passed,xlab='pwm weight',ylab='purity')
-plot(density(scores),type='l',xlab='score')
-points(density(neg.scores),type='l',col='red')
+plot(seq(stepsz,50,by=stepsz),1/(1+alloptim),type='l',main=num.passed,xlab='pwm weight',ylab='purity',log='x')
+abline(v=opt.pwm.weight$minimum)
+plot(density(scores,bw=0.1),type='l',xlab='score')
+points(density(neg.scores,bw=0.1),type='l',col='red')
 abline(v=cutv)
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
