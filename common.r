@@ -48,6 +48,9 @@ suppressMessages(require(Matrix,quietly=T))
 ####
 # params
 
+#if a file indicating completion is found; exit.
+overwrite=F
+
 #number of kmer samples to draw
 nkmer = 5000000
 #motif score cutoff (log)
@@ -56,6 +59,8 @@ motifcut = 5
 basecut = 0
 #max candidate sites (default 500k)
 maxcand = 500000
+#match reverse complement (setting to T matches ONLY the R.C.)
+match.rc = T
 
 
 #window size
