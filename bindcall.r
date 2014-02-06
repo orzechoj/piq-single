@@ -17,10 +17,8 @@ validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'))
 chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
 
 evalsvs <- function(pos.mat,neg.mat,wt){
-    #svps=t(filtermat.pos%*%wt[(1:(2*wsize))+2])%*%pos.mat
-    svps=wt[(1:(2*wsize))+2]%*%pos.mat
-    #svns=t(filtermat.neg%*%wt[(2*wsize+1):(4*wsize)+2])%*%neg.mat
-    svns=wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat
+    svps=suppressMessages(wt[(1:(2*wsize))+2]%*%pos.mat)
+    svns=suppressMessages(wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat)
     svps + svns + wt[1] + (colSums(pos.mat>0)+colSums(neg.mat>0)+1) * wt[2]
 }
 

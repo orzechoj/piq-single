@@ -8,17 +8,17 @@ new.repos["CRAN"] <- "http://cran.stat.ucla.edu"
 options(repos = new.repos)
 
 #source("http://www.bioconductor.org/biocLite.R")
-if(!require("BiocInstaller")){
+if(!suppressMessages(require("BiocInstaller",quietly=T))){
     install.packages("BiocInstaller", repos="http://www.bioconductor.org/packages/2.13/bioc")
 }
 
-ris <- function(x){if(!require(x,character.only=T)){
+ris <- function(x){if(!require(x,character.only=T,quietly=T,warn.conflicts=F)){
     install.packages(x)
-    require(x,character.only=T)
+    require(x,character.only=T,quietly=T,warn.conflicts=F)
 }}
-bis <- function(x){if(!require(x,character.only=T)){
+bis <- function(x){if(!require(x,character.only=T,quietly=T,warn.conflicts=F)){
     biocLite(x)
-    require(x,character.only=T)
+    require(x,character.only=T,quietly=T,warn.conflicts=F)
 }}
 
 wipetemp <- function(){
@@ -35,15 +35,15 @@ set.seed(1)
 
 ####
 # dependencies
-require('BiocInstaller')
-#bis("BSgenome.Mmusculus.UCSC.mm10")
-bis("BSgenome.Hsapiens.UCSC.hg19")
-bis("Rsamtools")
-bis('Biostrings')
 
-ris('RSofia')
-ris('statmod')
-require(Matrix)
+suppressMessages(require('BiocInstaller',quietly=T))
+suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19"))
+suppressMessages(bis("Rsamtools"))
+suppressMessages(bis('Biostrings'))
+
+suppressMessages(ris('RSofia'))
+suppressMessages(ris('statmod'))
+suppressMessages(require(Matrix,quietly=T))
 
 ####
 # params

@@ -25,11 +25,25 @@ bamfile = args[5]
 #which pwm file to use in pwmdir
 pwmid = args[6]
 
-source('utils/copybam.r')
-load(paste0(pwmdir,pwmid,'.pwmout.RData'))
-if(sum(clengths[1])>0){
-source('loadbam.r')	
-source('cluster.r')
-source('bindcall.r')
+source(commonfile)
+if(overwrite==F & file.exists( file.path(outdir,paste0(pwmid,'-diag.pdf')))){
+  stop(paste0('found previous run for ',pwmid,' avoiding overwrite'))
 }
 
+debugstring = c('loading pwm','loadbam','clustering','binding outputs')
+
+tryCatch({
+phase=0
+load(paste0(pwmdir,pwmid,'.pwmout.RData'))
+if(sum(clengths[1])>0){
+phase=1
+source('loadbam.r')	
+phase=2
+source('cluster.r')
+phase=3
+source('bindcall.r')
+}
+},error = function(e){
+   e$message=paste0('error during ',debugstring[phase+1],'\n','Error msg: ',e$message,'\n Args:',paste0(commandArgs(trailingOnly = TRUE),collapse=':'))
+   stop(e)
+})

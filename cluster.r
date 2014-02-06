@@ -110,8 +110,8 @@ rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
-        pm = t(rot.pos)%*%pos.mat
-        nm = t(rot.neg)%*%neg.mat
+        pm = suppressMessages(t(rot.pos)%*%pos.mat)
+        nm = suppressMessages(t(rot.neg)%*%neg.mat)
     if(ncol(pm)>1){
     posind=apply(pm,2,function(j){
         rbind(which(j!=0),j[j!=0])
@@ -169,8 +169,8 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 # calc fig
 
 sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=0.1,iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
-vpos=as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))]))
-vneg=as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)]))
+vpos=suppressMessages(as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))])))
+vneg=suppressMessages(as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
 sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
 save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))

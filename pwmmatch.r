@@ -12,6 +12,10 @@ jaspardir = args[2]
 id = as.double(args[3])
 outdir = args[4]
 
+if(file.exists(paste0(outdir,id,'.pwmout.RData'))){
+  stop("pwm file already exists")
+}
+
 source(commondir)
 
 ####
