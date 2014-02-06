@@ -12,6 +12,10 @@ jaspardir = args[2]
 id = as.double(args[3])
 outdir = args[4]
 
+if(file.exists(paste0(outdir,id,'.pwmout.RData'))){
+  stop("pwm file already exists")
+}
+
 source(commondir)
 
 ####
@@ -71,6 +75,10 @@ strs=sapply(passcut,function(i){
     paste0(basenames[str[i,]],collapse='')
 })
 ustrs=unique(strs)
+uscores=as.double(scores[passcut][match(ustrs,strs)])
+if(match.rc){
+  ustrs=as.character(reverseComplement(DNAStringSet(ustrs)))
+}
 
 if(length(ustrs)>0){
 
@@ -84,7 +92,7 @@ coords.list=lapply(chrstr,function(i){
     mpd=matchPDict(pd,genome[[i]])
 })
 
-uscores=as.double(scores[passcut][match(ustrs,strs)])
+
 
 coords.pwm=sapply(coords.list,function(i){
     ci=countIndex(i)

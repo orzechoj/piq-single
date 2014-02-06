@@ -110,17 +110,17 @@ rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
-        pm = t(rot.pos)%*%pos.mat
-        nm = t(rot.neg)%*%neg.mat
+        pm = suppressMessages(t(rot.pos)%*%pos.mat)
+        nm = suppressMessages(t(rot.neg)%*%neg.mat)
     if(ncol(pm)>1){
-    posind=apply(pm,2,function(j){
+    posind=lapply(split(pm,col(pm)),function(j){
         rbind(which(j!=0),j[j!=0])
     })
     }else{
     posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
     }
     if(ncol(nm)>1){
-    negind=apply(nm,2,function(j){
+    negind=lapply(split(nm,col(nm)),function(j){
         rbind(which(j!=0),j[j!=0])
     })
     }else{
@@ -128,7 +128,7 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     }
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
-    sapply(sel,function(i){
+    ret=sapply(sel,function(i){
         tct=rct[i]+1
 	if(tct > 1){
 	pid = posind[[i]][1,]
@@ -150,6 +150,8 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
 	}
         paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
     })
+    if(length(sel)==0){ret = character(0)}
+    ret
 }
 
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
@@ -169,8 +171,8 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 # calc fig
 
 sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=0.1,iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
-vpos=as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))]))
-vneg=as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)]))
+vpos=suppressMessages(as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))])))
+vneg=suppressMessages(as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
 sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
 save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
