@@ -42,7 +42,7 @@ for(i in 1:length(validpos)){
     negct = negct + rowSums(neg.mat)
     tct=colSums(pos.mat)+colSums(neg.mat)
     rowsizes[i]=ncol(pos.mat)
-    pws=coords.pwm[[chrids[i]]]
+    pws=coords.pwm[clengths>0][[chrids[i]]]
     sv.score = as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
     outputs=cbind(sv.score,tct,pws)
     writeBin(as.vector(outputs),file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),8)
@@ -81,8 +81,8 @@ getopp <- function(x){
     vcut=(pwb+capf(neglis)*x)
     svcut = sort(vcut)
     maxl=min(50000,length(sorted))
-    #ops=(length(svcut)-findInterval(sorted[100:maxl],svcut+1e-20)+10)/(100:maxl)
-    ops=(findInterval(-(sorted[100:maxl]),rev(-svcut))+10)/(100:maxl)	
+    minl=min(length(sorted)/2, 100)
+    ops=(findInterval(-(sorted[minl:maxl]),rev(-svcut))+10)/(minl:maxl)	
     list(objective=min(ops),minimum=which.min(ops))
 }
 
@@ -113,10 +113,10 @@ passed.cutoff = scores > cutv
 #
 
 chrs.vec=do.call(c,lapply(1:length(validpos),function(i){
-    rep(ncoords[chrids[i]],length(coords[[chrids[i]]]))
+    rep(ncoords[chrids[i]],length(coords[clengths>0][[chrids[i]]]))
 }))
 coords.vec=do.call(c,lapply(1:length(validpos),function(i){
-    start(coords[[chrids[i]]])
+    start(coords[clengths>0][[chrids[i]]])
 }))
 
 df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=allsvs,score=scores,purity=purity)

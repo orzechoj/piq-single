@@ -113,14 +113,14 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
         pm = suppressMessages(t(rot.pos)%*%pos.mat)
         nm = suppressMessages(t(rot.neg)%*%neg.mat)
     if(ncol(pm)>1){
-    posind=apply(pm,2,function(j){
+    posind=lapply(split(pm,col(pm)),function(j){
         rbind(which(j!=0),j[j!=0])
     })
     }else{
     posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
     }
     if(ncol(nm)>1){
-    negind=apply(nm,2,function(j){
+    negind=lapply(split(nm,col(nm)),function(j){
         rbind(which(j!=0),j[j!=0])
     })
     }else{
@@ -128,7 +128,7 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     }
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
-    sapply(sel,function(i){
+    ret=sapply(sel,function(i){
         tct=rct[i]+1
 	if(tct > 1){
 	pid = posind[[i]][1,]
@@ -150,6 +150,8 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
 	}
         paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
     })
+    if(length(sel)==0){ret = character(0)}
+    ret
 }
 
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
