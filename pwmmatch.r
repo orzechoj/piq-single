@@ -32,7 +32,7 @@ importJaspar <- function(file=myloc) {
   pos <- data.frame(start=start, end=c(end[-1], length(vec)))
   pwm <- sapply(seq(along=pos[,1]), function(x) vec[pos[x,1]:pos[x,2]])
   pwm <- sapply(seq(along=pwm), function(x) strsplit(pwm[[x]], " {1,}"))
-  pwm <- sapply(seq(along=start), function(x) matrix(as.numeric(t(as.data.frame(pwm[(pos[x,1]+1):pos[x,2]]))[,-1]), nrow=4, dimnames=list(c("A", "C", "G", "T"), NULL)))
+  pwm <- lapply(seq(along=start), function(x) matrix(as.numeric(t(as.data.frame(pwm[(pos[x,1]+1):pos[x,2]]))[,-1]), nrow=4, dimnames=list(c("A", "C", "G", "T"), NULL)))
   names(pwm) <- gsub(">", "", vec[start])
   return(pwm)
 }
