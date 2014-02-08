@@ -110,22 +110,32 @@ rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
+    print('loaded')
+    if(!fast.mode){
         pm = suppressMessages(t(rot.pos)%*%pos.mat)
         nm = suppressMessages(t(rot.neg)%*%neg.mat)
+    }else{
+        pm = pos.mat
+        nm = neg.mat
+    }
+    print('findind')
     if(ncol(pm)>1){
-    posind=lapply(split(pm,col(pm)),function(j){
+    posind=lapply(1:ncol(pm),function(i){
+        j=pm[,i]
         rbind(which(j!=0),j[j!=0])
     })
     }else{
     posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
     }
     if(ncol(nm)>1){
-    negind=lapply(split(nm,col(nm)),function(j){
+    negind=lapply(1:ncol(nm),function(i){
+        j=nm[,i]
         rbind(which(j!=0),j[j!=0])
     })
     }else{
     negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))	
     }
+    print('runret')
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
     sel = which(rct>minread)
     ret=sapply(sel,function(i){
