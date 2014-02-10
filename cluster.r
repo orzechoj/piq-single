@@ -12,8 +12,15 @@ source(commonfile)
 
 load(file.path(tmpdir,paste0('background.tf',pwmid,'-chr1.RData')))
 
+#use precomputed tables if wsize is 1000
+if( (!fast.mode) & (wsize = 1000)){
+    load('precalc/cov.premade.RData')
+    tmat.pos = cov.premade[1:(2*wsize),]
+    tmat.neg = cov.premade[((1:(2*wsize)) + (2*wsize)),]
+}
+
 #require at least 30k sites to do a background estimate
-if((ncol(pos.mat) > 30000) & (!fast.mode)){
+if((ncol(pos.mat) > 30000) & (!fast.mode) & (wsize != 1000)){
 
 source('covfun.r')
 
@@ -96,6 +103,9 @@ rot.pos[lower.tri(rot.pos,diag=T)]=pv[1]/max(pv)
 rot.neg = matrix(0,wsize*2,wsize*2)
 rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
 
+tmat.pos = cbind(rot.pos, matrix(0,2*wsize,2*wsize))
+tmat.neg = cbind(matrix(0,2*wsize,2*wsize), rot.neg)
+
 }else{
 	rot.pos = diag(wsize*2)	
 	rot.neg = diag(wsize*2)	
@@ -164,6 +174,8 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     ret
 }
 
+
+if(fast.mode){
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
 vptrain=validpos
 allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10,rot.pos=rot.pos,rot.neg=rot.neg))
@@ -180,12 +192,49 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 #####
 # calc fig
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=0.1,iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=10000/length(allpos),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+
 vpos=suppressMessages(as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))])))
 vneg=suppressMessages(as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
 sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
-save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
+save(sv.fit,sv.rotate,file=file.path(outdir,paste0(pwmid,'.svout.RData')))
+
+
+}else{
+
+validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
+validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+
+allnom = c('label','rct',paste0('x',1:ncol(tmat.pos)))
+alldat=rbind(
+    do.call(rbind,lapply(validpos,function(i){
+        print(i)
+    load(i)
+    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
+    y=data.frame(label=1,rct[rct>10],x=t(as.matrix(t(tmat.pos)%*%pos.mat[,rct>10] + t(tmat.neg)%*%neg.mat[,rct>10])))
+    colnames(y)=allnom
+    y
+})),
+    do.call(rbind,lapply(validneg,function(i){
+    print(i)
+    load(i)
+    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
+    y=data.frame(label=-1,rct,x=t(as.matrix(t(tmat.pos)%*%pos.mat + t(tmat.neg)%*%neg.mat)))
+    colnames(y)=allnom
+    y
+})))
+
+write.svmlight(alldat[,1],as.matrix(alldat[,-1]),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
+
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=ncol(alldat),random_seed=1,lambda=10000/nrow(alldat),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+
+sv.rotate=c(sv.fit$weights[1:2],tmat.pos%*%(sv.fit$weight[-(1:2)]),tmat.neg%*%(sv.fit$weight[-(1:2)]))
+
+save(sv.fit,sv.rotate,file=file.path(outdir,paste0(pwmid,'.svout.RData')))
+
+}
+
 
 #
 #####
