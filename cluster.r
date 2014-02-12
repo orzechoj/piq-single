@@ -198,7 +198,7 @@ vpos=suppressMessages(as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))])))
 vneg=suppressMessages(as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
 sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
-save(sv.fit,sv.rotate,file=file.path(outdir,paste0(pwmid,'.svout.RData')))
+save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 
 }else{
@@ -231,7 +231,7 @@ sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensional
 
 sv.rotate=c(sv.fit$weights[1:2],tmat.pos%*%(sv.fit$weight[-(1:2)]),tmat.neg%*%(sv.fit$weight[-(1:2)]))
 
-save(sv.fit,sv.rotate,file=file.path(outdir,paste0(pwmid,'.svout.RData')))
+save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 }
 
