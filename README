@@ -3,6 +3,8 @@
 
 common.r -- MODIFY genome to fit your data, match bis("BSgenome.*") to your genome
 
+input files - use jasparfix.txt in the pwms folder (all JASPAR including PBM hits) for a comprehensive list. If for whatever reason you only want JASPAR CORE hits, use jaspar.txt.
+
 ##########
 # About the output
 
@@ -10,15 +12,27 @@ For each PWM, PIQ outputs 3 files: two .csv files containing call scores and a .
 
 *-calls.all.csv : contains ALL instances of motif matches from pwmmatch.r and its associated scores. This file is useful if you want to re-do the cutoffs yourself or if you want to look at instances where the motif is matched but the factor is unbound.
 
+
+definition of columns:
+        column 1: row id, useful if going from calls.csv and mapping to calls.all.csv
+        column 2: chromosome id, taken from the define BSgenome package
+        column 3: coordinate uses same coordinates as BAM file
+        column 4: pwm score, interpreted as log-probability vs uniform ATCG background.
+        column 5: shape, interpreted as the logistic odds between PWM match and background, or the log-odds of this example being drawn from a PWM match rather than a background item. Do not naively interpret this as a probability by passing through a logit transform.
+        column 6: score, weighted score of both PWM and shape (distance from linear separator in page 6 of diag.pdf) same units as column 4 and 5 of log-odds
+        column 7: purity, or an esimate of PPV: If you cutoff at purity value of X, then X% of those will be true binding sites, assuming a 50-50 prior on a candidate site being a binding site.
+
+
 *-calls.csv : contains instances of motif match whose scores had purity above the purity.cuotff value in common.r. Purity is a proxy for PPV. A purity of 0.7 means 70% of the entries in calls.csv will be bound (estimated using background binding sites).
 
 *-diag.pdf : contains diagnostic pdf output of the motif and its binding sites.
-	
+
 	page 1 : plots purity vs binding site. High maximum purity means there are a small subset of sites which match the predicted DNase-pattern very close, while a large number of moderately high purity sites means there is a gradient of weak purity enrichment. If designing a cutoff this should inform choice of cutoffs.
 	page 2 : plots classification boundary of the regressor. + strand is on the left, - strand on the right, above the horizontal line means a read contributes positively to the score. The two values at the bottom give the score when there are no reads (left) and the effect of the number of bases with reads within the window to the score (right).
 	page 3 : plots the distribution of reads around the motif in + strand (black) - strand(green) and background non-motif matched site (green).
-	page 4 : plots maximum purity achieved versus PWM to DNase-score weight. The overall PIQ score is the weighted sum of PWM and DNase-based scores. This plot shows the tradeoff in purity as a function of PWM dependence. 
-	page 5 : scatterplot showing the distribution of DNase-score (y axis), PWM score (x axis) for motif match points (black, small dots) background points (red, small dots) and those called as bound by PIQ (back, large dots). The black large dots should show a clear enrichment over the red small dots.
+	page 4 : plots maximum purity achieved versus PWM to DNase-score weight. The overall PIQ score is the weighted sum of PWM and DNase-based scores. This plot shows the tradeoff in purity as a function of PWM dependence.
+        page 5 : density plot showing the separation between examples from pwm match (black) and random background (red).
+	page 6 : scatterplot showing the distribution of DNase-score (y axis), PWM score (x axis) for motif match points (black, small dots) background points (red, small dots) and those called as bound by PIQ (back, large dots). The black large dots should show a clear enrichment over the red small dots.
 
 ##########
 # How to run
