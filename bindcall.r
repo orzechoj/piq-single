@@ -148,3 +148,28 @@ samp=sample(1:length(allpws),50000,replace=T)
 plot(allpws[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1])
 points(pwb[samp],capf(neglis[samp]),pch='.',col='red')
 dev.off()
+
+center = c(wsize + (-199:199))
+bgpluscts = do.call(c,lapply(list.files(tmpdir,paste0('background.tf',pwmid,'-')),function(i){
+    load(file.path(tmpdir,i))
+    colSums(pos.mat[center,,drop=F])
+}))
+bgnegcts = do.call(c,lapply(list.files(tmpdir,paste0('background.tf',pwmid,'-')),function(i){
+    load(file.path(tmpdir,i))
+    colSums(neg.mat[center,,drop=F])
+}))
+pluscts = do.call(c,lapply(list.files(tmpdir,paste0('positive.tf',pwmid,'-')),function(i){
+    load(file.path(tmpdir,i))
+    colSums(pos.mat[center,,drop=F])
+}))
+negcts = do.call(c,lapply(list.files(tmpdir,paste0('positive.tf',pwmid,'-')),function(i){
+    load(file.path(tmpdir,i))
+    colSums(neg.mat[center,,drop=F])
+}))
+pwsub=order(-allpws)[1:min(10000,length(allpws))]
+prank = purity[rank(-scores)][pwsub]
+prank2=1/(1+exp(-log(prank)+log(1-prank)+1))
+pio.plus = log((sum(pluscts[pwsub]*prank2)/sum(prank2))/(mean(bgpluscts[pwsub])))/log(2)
+pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts[pwsub])))/log(2)
+pio.value = (pio.plus+pio.neg)*2
+writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-chropen.txt')))
