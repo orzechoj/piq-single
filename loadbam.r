@@ -20,6 +20,8 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
     cwidth = width(coords[[1]][1])
     obschrnames=names(allreads)
     validchr = obschrnames[which(obschrnames%in%ncoords)]
+    readcov=sapply(validchr,function(i){length(allreads[[i]]$plus)+length(allreads[[i]]$minus)})/seqlengths(genome)[validchr]
+    readfact = readcov/readcov[1]
     for(chr in validchr){
     print(chr)
         chrcoord=shift(coords[[chr]],offset)
@@ -30,8 +32,8 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
         pos.unique.hits = unique(queryHits(fos))
         pos.offset=pluscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
         ubd=findInterval(c(0,pos.unique.hits),queryHits(fos))
-	rre = rle(pos.offset/(2*wsize+1)+queryHits(fos))	
-	rval= rre$lengths
+	rre = rle(pos.offset/(2*wsize+1)+queryHits(fos))
+	rval= rre$lengths / readfact[chr]
 	rre$lengths = rep(1,length(rre$lengths))
 	posset = inverse.rle(rre)
 	uquery=floor(posset)
@@ -44,8 +46,8 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
         neg.unique.hits = unique(queryHits(fos))
         neg.offset=minuscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
         ubd=findInterval(c(0,neg.unique.hits),queryHits(fos))
-	rre = rle(neg.offset/(2*wsize+1)+queryHits(fos))	
-	rval= rre$lengths
+	rre = rle(neg.offset/(2*wsize+1)+queryHits(fos))
+	rval= rre$lengths / readfact[chr]
 	rre$lengths = rep(1,length(rre$lengths))
 	negset = inverse.rle(rre)
 	uquery=floor(negset)
