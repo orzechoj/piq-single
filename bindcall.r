@@ -16,10 +16,14 @@ sv.rotate[osvr[1:(2*ncol(pwmin))]] = sort(sv.rotate,decreasing=T)[(2*ncol(pwmin)
 validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'))
 chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
 
+if(sv.rotate[2] < 0){
+    sv.rotate[2]=0
+}
+
 evalsvs <- function(pos.mat,neg.mat,wt){
     svps=suppressMessages(wt[(1:(2*wsize))+2]%*%pos.mat)
     svns=suppressMessages(wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat)
-    svps + svns + wt[1] + (colSums(pos.mat>0)+colSums(neg.mat>0)+1) * wt[2]
+    svps + svns + wt[1] + (floor(colSums(pos.mat)+colSums(neg.mat))+1) * wt[2]
 }
 
 posbgct = rep(0,2*wsize)
@@ -64,10 +68,14 @@ allpws=do.call(c,lapply(1:length(validpos),function(i){
     readonecol(file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],3)
 }))
 
+allcts=do.call(c,lapply(1:length(validpos),function(i){
+    readonecol(file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),rowsizes[i],2)
+}))
+
 
 #capf <- function(x,cap=min(c(neglis,allsvs))){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
-capf <- function(x,cap=(sv.rotate[1]+sv.rotate[2])){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
-#capf <- function(x,cap=0){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
+#capf <- function(x,cap=(sv.rotate[1]+sv.rotate[2])){y=(x-cap);y[y<=0]=1e-3;log(y+1e-3)}
+capf <- function(x,cap=(sv.rotate[1]+sv.rotate[2])){y=(x-cap-1);y[y>=0]=log(y[y>=0]+1);y};
 #capf <- function(x){x}
 
 nenrich <- function(x){
@@ -91,7 +99,8 @@ lnsrch <- function(i,sorted,svcut,regr=100){
 }
 
 set.seed(1)
-pwb = sample(allpws,length(allpws))
+pwb = sample(allpws,length(neglis),replace=T)
+ct.ratio = length(allpws)/length(neglis)
 
 stepsz=0.1
 alloptim=sapply(seq(stepsz,50,by=stepsz),nenrich)#
@@ -103,7 +112,7 @@ erpen=1
 scores=allpws+capf(allsvs)*opt.pwm.weight$minimum
 neg.scores = pwb + capf(neglis)*opt.pwm.weight$minimum
 maxl=length(scores)
-enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores)))/(1:maxl)	
+enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores)))/(1:maxl)*ct.ratio
 purity = 1/(enrich.ratio+1)
 num.passed=rev(which(purity>purity.cut))[1]+50
 if(is.na(num.passed)){num.passed=50}

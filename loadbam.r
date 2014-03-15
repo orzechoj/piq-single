@@ -23,8 +23,15 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
     readcov=sapply(validchr,function(i){length(allreads[[i]]$plus)+length(allreads[[i]]$minus)})/seqlengths(genome)[validchr]
     readfact = readcov/readcov[1]
     for(chr in validchr){
-    print(chr)
-        chrcoord=shift(coords[[chr]],offset)
+        print(chr)
+        if(prefix=='background.'){
+            nsites = length(coords[[chr]])
+            coind = sample(1:length(coords),max(nsites,2000),replace=T)
+            ofs = sample(offset:(5*offset),max(nsites,2000),replace=T)
+            chrcoord=shift(coords[[chr]][coind],ofs)
+        }else{
+            chrcoord=coords[[chr]]
+        }
 	pluscoord=allreads[[chr]]$plus
 	minuscoord=allreads[[chr]]$minus
         irp=IRanges(start=pluscoord,width=1)
