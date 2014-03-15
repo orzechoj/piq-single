@@ -68,7 +68,7 @@ chrstr = seqnames(genome)
 coords.list = lapply(chrstr,function(i){
     print(i)
     mpwm=matchPWM(pwuse,genome[[i]],min.score=motifcut)
-    pscore=PWMscoreStartingAt(pwuse,unmasked(genome[[i]]),start(mpwm))
+    pscore=PWMscoreStartingAt(pwuse,as(genome[[i]],"DNAString"),start(mpwm))
     list(mpwm,pscore)
 })
 
