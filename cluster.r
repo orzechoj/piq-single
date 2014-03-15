@@ -107,8 +107,8 @@ tmat.pos = cbind(rot.pos, matrix(0,2*wsize,2*wsize))
 tmat.neg = cbind(matrix(0,2*wsize,2*wsize), rot.neg)
 
 }else{
-	rot.pos = diag(wsize*2)	
-	rot.neg = diag(wsize*2)	
+	rot.pos = diag(wsize*2)
+	rot.neg = diag(wsize*2)
 }
 
 
@@ -116,67 +116,43 @@ tmat.neg = cbind(matrix(0,2*wsize,2*wsize), rot.neg)
 #####
 # make svlite
 
+converter.src <- '
+Rcpp::NumericMatrix triplePos(rtriplePos);
+Rcpp::NumericMatrix tripleNeg(rtripleNeg);
+Rcpp::NumericVector sums(rsum);
+int label = as<int>(rlabel);
+int negoff = as<int>(rnegoff);
+Rcpp::CharacterVector cv(sums.size());
+int tripleindPos = 0;
+int tripleindNeg = 0;
+for(int i=0; i < sums.size(); i++){
+  char str[65536];
+  double sumct = sums[i];
+  int cp = snprintf(str, 65536, "%d %d:%f", label, 1, sumct);
+  while(tripleindPos < triplePos.nrow() && triplePos(tripleindPos,0)-1 == i){
+    int crd = triplePos(tripleindPos,1)+1;
+    double wt = triplePos(tripleindPos,2);
+    cp += snprintf(str + cp, 65536-cp, " %d:%f", crd, wt);
+    tripleindPos++;
+  }
+  while(tripleindNeg < tripleNeg.nrow() && tripleNeg(tripleindNeg,0)-1 == i){
+    int crd = tripleNeg(tripleindNeg,1)+1+negoff;
+    double wt = tripleNeg(tripleindNeg,2);
+    cp += snprintf(str + cp, 65536-cp, " %d:%f", crd, wt);
+    tripleindNeg++;
+  }
+  cv[i] = str;
+}
+return cv;
+'
+converter <- cxxfunction(signature(rtriplePos="numeric",rtripleNeg="numeric",rsum="numeric",rnegoff="integer",rlabel="integer"),converter.src,plugin="Rcpp",includes="#include <stdio.h>")
 
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
-    print('loaded')
-    nm = neg.mat
-    pm = pos.mat
-    print('findind')
-    if(ncol(pm)>1){
-    spm=summary(pm)
-    pfi=findInterval(c(0,1:ncol(pm)),spm[,2])
-    posind=lapply(1:ncol(pm),function(i){
-        if(pfi[i]==pfi[i+1]){
-            matrix(0,2,0)
-        }else{
-            t(spm[(pfi[i]+1):pfi[i+1],-2])
-        }
-    })
-    }else{
-    posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
-    }
-    if(ncol(nm)>1){
-    snm = summary(nm)
-    nfi=findInterval(c(0,1:ncol(nm)),snm[,2])
-    negind=lapply(1:ncol(nm),function(i){
-        if(nfi[i]==nfi[i+1]){
-            matrix(0,2,0)
-        }else{
-            t(snm[(nfi[i]+1):nfi[i+1],-2])
-        }
-    })
-    }else{
-    negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))
-    }
-    print('runret')
-    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
-    sel = which(rct>minread)
-    ret=sapply(sel,function(i){
-        tct=rct[i]+1
-	if(tct > 1){
-	pid = posind[[i]][1,]
-	nid = negind[[i]][1,]
-	pval = posind[[i]][2,]
-	nval = negind[[i]][2,]
-        if(length(pid) > 0){
-	cpos = paste0(pid+1,':',pval)
-	}else{
-	cpos = character(0)
-	}
-	if(length(nid) > 0){
-	cneg = paste0(nid+1+2*wsize,':',nval)
-	}else{
-	cneg = character(0)
-	}}else{
-	cpos = character(0)
-	cneg = character(0)
-	}
-        paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
-    })
-    if(length(sel)==0){ret = character(0)}
-    ret
+    rct=floor(colSums(pos.mat)+colSums(neg.mat))+1
+    cv=converter(pos.triple,neg.triple,rct,2*wsize,label)
+    cv[rct>minread]
 }
 
 
@@ -197,7 +173,7 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 #####
 # calc fig
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=10000/length(allpos),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=10000/length(allpos),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
 
 vpos=suppressMessages(as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))])))
 vneg=suppressMessages(as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))

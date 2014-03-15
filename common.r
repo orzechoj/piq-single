@@ -43,7 +43,12 @@ suppressMessages(bis('Biostrings'))
 
 suppressMessages(ris('RSofia'))
 suppressMessages(ris('statmod'))
+suppressMessages(ris('Rcpp'))
+suppressMessages(ris('inline'))
 suppressMessages(require(Matrix,quietly=T))
+
+
+
 
 ####
 # params
