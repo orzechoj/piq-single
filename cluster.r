@@ -10,7 +10,7 @@ source(commonfile)
 #####
 # make bg
 
-load(file.path(tmpdir,paste0('background.tf',pwmid,'-chr1.RData')))
+load(file.path(tmpdir,paste0('background.tf',pwmid,'-',seqnames(genome)[1],'.RData')))
 
 #use precomputed tables if wsize is 1000
 if( (!fast.mode) & (wsize = 1000)){
