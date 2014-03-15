@@ -121,29 +121,35 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
     print('loaded')
-    if(!fast.mode){
-        pm = suppressMessages(t(rot.pos)%*%pos.mat)
-        nm = suppressMessages(t(rot.neg)%*%neg.mat)
-    }else{
-        pm = pos.mat
-        nm = neg.mat
-    }
+    nm = neg.mat
+    pm = pos.mat
     print('findind')
     if(ncol(pm)>1){
+    spm=summary(pm)
+    pfi=findInterval(c(0,1:ncol(pm)),spm[,2])
     posind=lapply(1:ncol(pm),function(i){
-        j=pm[,i]
-        rbind(which(j!=0),j[j!=0])
+        if(pfi[i]==pfi[i+1]){
+            matrix(0,2,0)
+        }else{
+            t(spm[(pfi[i]+1):pfi[i+1],-2])
+        }
     })
     }else{
     posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
     }
     if(ncol(nm)>1){
+    snm = summary(nm)
+    nfi=findInterval(c(0,1:ncol(nm)),snm[,2])
     negind=lapply(1:ncol(nm),function(i){
-        j=nm[,i]
-        rbind(which(j!=0),j[j!=0])
+        negind=lapply(1:ncol(nm),function(i){
+        if(nfi[i]==nfi[i+1]){
+            matrix(0,2,0)
+        }else{
+            t(snm[(nfi[i]+1):nfi[i+1],-2])
+        }
     })
     }else{
-    negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))	
+    negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))
     }
     print('runret')
     rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
