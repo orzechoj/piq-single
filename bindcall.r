@@ -131,31 +131,37 @@ coords.vec=do.call(c,lapply(1:length(validpos),function(i){
 df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=capf(allsvs),score=scores,purity=purity[rank(-scores)])
 df.bg=df.all[passed.cutoff,]
 
-write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-calls.csv')))
-write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-calls.all.csv')))
+pwname.short = gsub("[[:punct:]]","",pwmname)
 
+write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.csv')))
+write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.all.csv')))
 
-pdf(file.path(outdir,paste0(pwmid,'-diag.pdf')))
+laymat = matrix(c(1,4,2,3),2,2,byrow=T)
+
+pdf(file.path(outdir,paste0(pwmid,'-',pwname.short,'-diag.pdf')),10,7)
+seqLogo(t(t(pwmin)/colSums(pwmin)))
+layout(laymat)
 xseq=seq(1,length(purity),length=1000)
-plot(xseq,purity[xseq],type='l',xlab='n',ylab='purity')
-plot(sv.rotate[-(1:2)],type='l',main=pwmname,sub=paste(sv.rotate[1],sv.rotate[2],sep=':'),xlab='pos',ylab='score')
+plot(xseq,purity[xseq],type='l',xlab='Number of sites called',ylab='Purity',main='estimated PPV vs number of calls')
+plot(sv.rotate[-(1:2)],type='l',sub=paste(sv.rotate[1],sv.rotate[2],sep=':'),xlab='offset from motif match, strands concatenated',ylab='score',main='Binding classifier')
 abline(h=0,col='red')
-plot(posct,type='l',xlab='pos',ylab='counts')
+plot(posct,type='l',xlab='offset from motif match',ylab='counts',main="observed counts at motif match vs background")
 points(negct,col='red',type='l')
-points(posbgct,col='green',type='l')
-legend('topright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
-plot(seq(stepsz,50,by=stepsz),1/(1+alloptim),type='l',main=num.passed,xlab='pwm weight',ylab='purity',log='x')
+points(posbgct*ct.ratio,col='green',type='l')
+legend('bottomright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
+plot(seq(stepsz,50,by=stepsz),1/(1+alloptim*ct.ratio),type='l',main='Sequence dependence vs max purity',xlab='inverse sequence dependence',ylab='max purity',log='x')
 abline(v=opt.pwm.weight$minimum)
-plot(density(scores,bw=0.1),type='l',xlab='score')
+#
+layout(matrix(c(1,3,2,2),2,2,byrow=T))
+plot(density(scores,bw=0.1),type='l',xlab='score',ylab='density',main='Scores for \n motif match (black) vs background (red)')
 points(density(neg.scores,bw=0.1),type='l',col='red')
 abline(v=cutv)
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
-#hist(allpws)
-#hist(log(allsvs[allsvs>0]),100)
 samp=sample(1:length(allpws),50000,replace=T)
-plot(allpws[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1])
+plot(allpws[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1],xlab='PWM score',ylab='DNase score',main='Distribution of PWM and DNase scores in pwm match (black) vs ctrl (red)\n with called sites (bold)')
 points(pwb[samp],capf(neglis[samp]),pch='.',col='red')
+plot(allcts[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1],main='Chromatin dependence of DNase score',xlab='Summed counts',ylab='DNase score')
 dev.off()
 
 center = c(wsize + (-199:199))
