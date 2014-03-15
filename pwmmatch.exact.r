@@ -72,6 +72,8 @@ coords.list = lapply(chrstr,function(i){
     list(mpwm,pscore)
 })
 
+if(sum(sapply(coords.list,function(i){length(i[[2]])}))>0){
+
 allpwm=do.call(c,lapply(coords.list,function(i){i[[2]]}))
 pwmcut2=sort(allpwm,decreasing=T)[min(length(allpwm),maxcand)]
 rm(allpwm)
