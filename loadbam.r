@@ -26,7 +26,7 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
         print(chr)
         if(prefix=='background.'){
             nsites = length(coords[[chr]])
-            coind = sample(1:length(coords),max(nsites,2000),replace=T)
+            coind = sample(1:length(coords[[chr]]),max(nsites,2000),replace=T)
             ofs = sample(offset:(5*offset),max(nsites,2000),replace=T)
             chrcoord=shift(coords[[chr]][coind],ofs)
         }else{
