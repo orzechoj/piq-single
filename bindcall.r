@@ -119,7 +119,7 @@ coords.vec=do.call(c,lapply(1:length(validpos),function(i){
     start(coords[clengths>0][[chrids[i]]])
 }))
 
-df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=allsvs,score=scores,purity=purity[rank(-scores)])
+df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=capf(allsvs),score=scores,purity=purity[rank(-scores)])
 df.bg=df.all[passed.cutoff,]
 
 write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-calls.csv')))

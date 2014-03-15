@@ -141,7 +141,6 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     snm = summary(nm)
     nfi=findInterval(c(0,1:ncol(nm)),snm[,2])
     negind=lapply(1:ncol(nm),function(i){
-        negind=lapply(1:ncol(nm),function(i){
         if(nfi[i]==nfi[i+1]){
             matrix(0,2,0)
         }else{
