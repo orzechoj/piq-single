@@ -1,4 +1,4 @@
-
+source('common.global.r')
 
 #####
 # Check before running
