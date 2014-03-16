@@ -22,49 +22,61 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
     validchr = obschrnames[which(obschrnames%in%ncoords)]
     readcov=sapply(validchr,function(i){length(allreads[[i]]$plus)+length(allreads[[i]]$minus)})/seqlengths(genome)[validchr]
     readfact = readcov/readcov[1]
+    slen = seqlengths(genome)
+    minbgs=floor(10000*(slen/sum(slen)))
     for(chr in validchr){
+        chrlen = slen[chr]
         print(chr)
         if(prefix=='background.'){
-            nsites = length(coords[[chr]])
-            coind = sample(1:length(coords[[chr]]),max(nsites,2000),replace=T)
-            ofs = sample(offset:(5*offset),max(nsites,2000),replace=T)
-            chrcoord=shift(coords[[chr]][coind],ofs)
+            nsites = max(length(coords[[chr]]),minbgs[chr])
+            coind = sample(1:(chrlen-2*wsize-1),nsites,replace=T)
+            chrcoord=sort(IRanges(start=coind,width=2*wsize))
         }else{
             chrcoord=coords[[chr]]
         }
 	pluscoord=allreads[[chr]]$plus
 	minuscoord=allreads[[chr]]$minus
-        irp=IRanges(start=pluscoord,width=1)
-        fos=findOverlaps(chrcoord,irp)
-        pos.unique.hits = unique(queryHits(fos))
-        pos.offset=pluscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
-        ubd=findInterval(c(0,pos.unique.hits),queryHits(fos))
-	rre = rle(pos.offset/(2*wsize+1)+queryHits(fos))
-	rval= rre$lengths / readfact[chr]
-	rre$lengths = rep(1,length(rre$lengths))
-	posset = inverse.rle(rre)
-	uquery=floor(posset)
-	uoffset = (posset-uquery)*(2*wsize+1)
-	pos.triple = cbind(round(uquery),round(uoffset),tfun(rval))
-	pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
+        if(length(pluscoord)>0){
+            irp=IRanges(start=pluscoord,width=1)
+            fos=findOverlaps(chrcoord,irp)
+            pos.unique.hits = unique(queryHits(fos))
+            pos.offset=pluscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
+            ubd=findInterval(c(0,pos.unique.hits),queryHits(fos))
+            rre = rle(pos.offset/(2*wsize+1)+queryHits(fos))
+            rval= rre$lengths / readfact[chr]
+            rre$lengths = rep(1,length(rre$lengths))
+            posset = inverse.rle(rre)
+            uquery=floor(posset)
+            uoffset = (posset-uquery)*(2*wsize+1)
+            pos.triple = cbind(round(uquery),round(uoffset),tfun(rval))
+            pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
+        }else{
+            pos.triple=cbind(1,1,0)
+            pos.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
+        }
     #
-        irn=IRanges(start=minuscoord,width=1)
-        fos=findOverlaps(chrcoord,irn)
-        neg.unique.hits = unique(queryHits(fos))
-        neg.offset=minuscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
-        ubd=findInterval(c(0,neg.unique.hits),queryHits(fos))
-	rre = rle(neg.offset/(2*wsize+1)+queryHits(fos))
-	rval= rre$lengths / readfact[chr]
-	rre$lengths = rep(1,length(rre$lengths))
-	negset = inverse.rle(rre)
-	uquery=floor(negset)
-	uoffset = (negset-uquery)*(2*wsize+1)
-	neg.triple = cbind(round(uquery),round(uoffset),tfun(rval))
-	neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
+        if(length(minuscoord)>0){
+            irn=IRanges(start=minuscoord,width=1)
+            fos=findOverlaps(chrcoord,irn)
+            neg.unique.hits = unique(queryHits(fos))
+            neg.offset=minuscoord[subjectHits(fos)]-start(chrcoord)[queryHits(fos)]+1
+            ubd=findInterval(c(0,neg.unique.hits),queryHits(fos))
+            rre = rle(neg.offset/(2*wsize+1)+queryHits(fos))
+            rval= rre$lengths / readfact[chr]
+            rre$lengths = rep(1,length(rre$lengths))
+            negset = inverse.rle(rre)
+            uquery=floor(negset)
+            uoffset = (negset-uquery)*(2*wsize+1)
+            neg.triple = cbind(round(uquery),round(uoffset),tfun(rval))
+            neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
+        }else{
+            neg.triple=cbind(1,1,0)
+            neg.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
+        }
 #
         save(pos.mat,neg.mat,pos.triple,neg.triple,file=paste0(tmpdir,prefix,'tf',pwmid,'-',chr,'.RData'))
 	gc()
-	    }
+    }
 }
 
 makeTFmatrix(coords2,'positive.')
