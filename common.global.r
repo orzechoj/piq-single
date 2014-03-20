@@ -37,7 +37,6 @@ set.seed(1)
 # dependencies
 
 suppressMessages(require('BiocInstaller',quietly=T))
-suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19"))
 suppressMessages(bis("Rsamtools"))
 suppressMessages(bis('Biostrings'))
 suppressMessages(bis('seqLogo'))
@@ -59,32 +58,5 @@ wsize = 1000
 #fast mode
 fast.mode = T
 
-#if a file indicating completion is found; exit.
-overwrite=F
-
-
-#number of kmer samples to draw
-nkmer = 5000000
-#motif score cutoff (log)
-motifcut = 5
-#motif informativeness cutoff (nats)
-basecut = 0
-#max candidate sites (default 500k)
-maxcand = 500000
-#match reverse complement (setting to T matches ONLY the R.C.)
-match.rc = T
-
-
-#window size
-wsize = 1000
-
-#fast mode
-fast.mode = T
-
-#purity of calls
-purity.cut = 0.7
-
-# load genome file
-
-genome = Hsapiens
-
+#seqbias mode
+avoid.seqbias=T

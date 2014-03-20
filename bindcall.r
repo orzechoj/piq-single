@@ -39,6 +39,20 @@ rowsizes = rep(0,length(validpos))
 posct=rep(0,2*wsize)
 negct=rep(0,2*wsize)
 
+if(!is.null(whitelist)){
+    validchr = ncoords
+    whitelist.pass=lapply(validchr,function(i){
+        pwmhits=flank(coords.short[[i]],width=wsize,both=T)
+        white.list.chr=white.list[[i]]
+        if(!is.null(white.list.chr)){
+            fos=findOverlaps(pwmhits,white.list.chr,type='within')
+            queryHits(fos)
+        }else{
+            integer(0)
+        }
+    });names(coords)=validchr
+}
+
 for(i in 1:length(validpos)){
     print(i)
     load(file.path(tmpdir,validpos[i]))
@@ -46,7 +60,11 @@ for(i in 1:length(validpos)){
     negct = negct + rowSums(neg.mat)
     tct=colSums(pos.mat)+colSums(neg.mat)
     rowsizes[i]=ncol(pos.mat)
-    pws=coords.pwm[clengths>0][[chrids[i]]]
+    if(!is.null(whitelist)){
+        pws=coords.pwm[clengths>0][[chrids[i]]][whitelist.pass[[chrids[i]]]]
+    }else{
+        pws=coords.pwm[clengths>0][[chrids[i]]]
+    }
     sv.score = as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
     outputs=cbind(sv.score,tct,pws)
     writeBin(as.vector(outputs),file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),8)
@@ -127,6 +145,15 @@ chrs.vec=do.call(c,lapply(1:length(validpos),function(i){
 coords.vec=do.call(c,lapply(1:length(validpos),function(i){
     start(coords[clengths>0][[chrids[i]]])
 }))
+
+if(!is.null(whitelist)){
+    chrs.vec=do.call(c,lapply(1:length(validpos),function(i){
+        rep(ncoords[chrids[i]],length(coords[clengths>0][[chrids[i]]]))[whitelist.pass[[chrids[i]]]]
+    }))
+    coords.vec=do.call(c,lapply(1:length(validpos),function(i){
+        start(coords[clengths>0][[chrids[i]]])[whitelist.pass[[chrids[i]]]]
+    }))
+}
 
 df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=capf(allsvs),score=scores,purity=purity[rank(-scores)])
 df.bg=df.all[passed.cutoff,]

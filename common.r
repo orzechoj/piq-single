@@ -32,3 +32,9 @@ maxcand = 500000
 nkmer = 5000000
 
 
+######
+# Optional: location of a whitelist directory. PWM matches will only be used if their window completely fits in the whitelist.
+# whitelist should be in .bed format.
+
+#whitelist = '/cluster/thashim/PIQ/capture.mm10.bed'
+whitelist = NULL
