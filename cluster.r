@@ -6,14 +6,20 @@ source(commonfile)
 #tmpdir
 #outdir
 
-
 #####
 # make bg
+datadir = paste0(tmpdir,'/',pwmid,'/')
 
-nsites = Reduce('+',lapply(list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T),function(i){load(i);ncol(pos.mat)}))
-if(nsites < 1000){fast.mode=F}
+nsites = Reduce('+',lapply(list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T),function(i){load(i);ncol(pos.mat)}))
+if(nsites < 100){fast.mode=F}
 
-load(file.path(tmpdir,paste0('background.tf',pwmid,'-',seqnames(genome)[1],'.RData')))
+load(file.path(datadir,paste0('background.tf',pwmid,'-',seqnames(genome)[1],'.RData')))
+
+if( two.pass & file.exists(paste0(outdir,'/params/twopass.RData')) ){
+    load(paste0(outdir,'/params/twopass.RData'))
+    tmat.pos = cov.premade[1:(2*wsize),]
+    tmat.neg = cov.premade[(2*wsize+1):(4*wsize),]
+}
 
 #use precomputed tables if wsize is 1000
 if( (!fast.mode) & (wsize <= 1000)){
@@ -27,7 +33,7 @@ if( (!fast.mode) & (wsize <= 1000)){
 if((ncol(pos.mat) > 30000) & (!fast.mode) & (wsize != 1000)){
 source('covfun.r')
 require(Matrix)
-lf=list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+lf=list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
 bgwsize=2*wsize
 pmc=Reduce('+',lapply(lf,function(i){
     print(i)
@@ -160,21 +166,25 @@ return cv;
 '
 converter <- cxxfunction(signature(rtriplePos="numeric",rtripleNeg="numeric",rsum="numeric",rnegoff="integer",rlabel="integer"),converter.src,plugin="Rcpp",includes="#include <stdio.h>")
 
+sumtr <-function(x){
+    x
+}
+
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
-    rct=floor(colSums(pos.mat)+colSums(neg.mat))+1
+    rct=sumtr(colSums(pos.mat)+colSums(neg.mat))+1
     cv=converter(pos.triple,neg.triple,rct,2*wsize,label)
-    cv[rct>minread]
+    cv[rct>(sumtr(minread)+1)]
 }
 
-
 if(fast.mode){
-validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
+
+validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T)
 vptrain=validpos
 allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10*wsize/1000,rot.pos=rot.pos,rot.neg=rot.neg))
 
-validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+validneg = list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
 vntrain=validneg
 allneg=do.call(c,lapply(vntrain,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
 
@@ -199,23 +209,23 @@ save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 }else{
 
-validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
-validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T)
+validneg = list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
 
 allnom = c('label','rct',paste0('x',1:ncol(tmat.pos)))
 alldat=rbind(
     do.call(rbind,lapply(validpos,function(i){
         print(i)
     load(i)
-    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
-    y=data.frame(label=1,rct[rct>10],x=t(as.matrix(t(tmat.pos)%*%pos.mat[,rct>10] + t(tmat.neg)%*%neg.mat[,rct>10])))
+    rct = sumtr(colSums(pos.mat) + colSums(neg.mat))+1
+    y=data.frame(label=1,rct[rct>(sumtr(11)+1)],x=t(as.matrix(t(tmat.pos)%*%pos.mat[,rct>(sumtr(11)+1)] + t(tmat.neg)%*%neg.mat[,rct>(sumtr(11)+1)])))
     colnames(y)=allnom
     y
 })),
     do.call(rbind,lapply(validneg,function(i){
     print(i)
     load(i)
-    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
+    rct = sumtr(colSums(pos.mat) + colSums(neg.mat))+1
     y=data.frame(label=-1,rct,x=t(as.matrix(t(tmat.pos)%*%pos.mat + t(tmat.neg)%*%neg.mat)))
     colnames(y)=allnom
     y
@@ -223,7 +233,9 @@ alldat=rbind(
 
 write.svmlight(alldat[,1],as.matrix(alldat[,-1]),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=ncol(alldat),random_seed=1,lambda=10000/nrow(alldat),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+itmax=min(5e+07,1000*sum(alldat[,1]==1))
+
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=ncol(alldat),random_seed=1,lambda=10000/sum(alldat[,1]==1),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
 
 sv.rotate=c(sv.fit$weights[1:2],tmat.pos%*%(sv.fit$weight[-(1:2)]),tmat.neg%*%(sv.fit$weight[-(1:2)]))
 

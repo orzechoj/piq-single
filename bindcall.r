@@ -2,69 +2,64 @@
 #commonfile
 source(commonfile)
 #pwmfile
-#load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
+load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #outdir
 
 #####
 # make call
+datadir = paste0(tmpdir,'/',pwmid,'/')
 
-osvr=order(-sv.rotate)
+osvr=order(-sv.rotate[-(1:2)])+2
 sv.rotate[osvr[1:(2*ncol(pwmin))]] = sort(sv.rotate,decreasing=T)[(2*ncol(pwmin)+1)]
 
-validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'))
+validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'))
 chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
 
 if(sv.rotate[2] < 0){
     sv.rotate[2]=0
 }
 
+sumtr <-function(x){
+    x
+}
+
 evalsvs <- function(pos.mat,neg.mat,wt){
     svps=suppressMessages(wt[(1:(2*wsize))+2]%*%pos.mat)
     svns=suppressMessages(wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat)
-    svps + svns + wt[1] + (floor(colSums(pos.mat)+colSums(neg.mat))+1) * wt[2]
+    svps + svns + wt[1] + (sumtr(colSums(pos.mat)+colSums(neg.mat))+1) * wt[2]
 }
 
 posbgct = rep(0,2*wsize)
 
-neglis=do.call(c,lapply(list.files(tmpdir,paste0('background.tf',pwmid,'-')),function(i){
+neglis=do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
     print(i)
-    load(file.path(tmpdir,i))
+    load(file.path(datadir,i))
     posbgct <<- posbgct + rowSums(pos.mat)
     as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
+}))
+
+negcts=do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
+    print(i)
+    load(file.path(datadir,i))
+    cs=colSums(pos.mat)+colSums(neg.mat)
+    print(max(cs))
+    cs
 }))
 
 rowsizes = rep(0,length(validpos))
 posct=rep(0,2*wsize)
 negct=rep(0,2*wsize)
 
-if(!is.null(whitelist)){
-    validchr = ncoords
-    whitelist.pass=lapply(validchr,function(i){
-        pwmhits=flank(coords.short[[i]],width=wsize,both=T)
-        white.list.chr=white.list[[i]]
-        if(!is.null(white.list.chr)){
-            fos=findOverlaps(pwmhits,white.list.chr,type='within')
-            queryHits(fos)
-        }else{
-            integer(0)
-        }
-    });names(coords)=validchr
-}
-
 for(i in 1:length(validpos)){
     print(i)
-    load(file.path(tmpdir,validpos[i]))
+    load(file.path(datadir,validpos[i]))
     posct = posct + rowSums(pos.mat)
     negct = negct + rowSums(neg.mat)
     tct=colSums(pos.mat)+colSums(neg.mat)
     rowsizes[i]=ncol(pos.mat)
-    if(!is.null(whitelist)){
-        pws=coords.pwm[clengths>0][[chrids[i]]][whitelist.pass[[chrids[i]]]]
-    }else{
-        pws=coords.pwm[clengths>0][[chrids[i]]]
-    }
+    pws=coords.pwm[clengths>0][[chrids[i]]]
     sv.score = as.double(evalsvs(pos.mat,neg.mat,sv.rotate))
     outputs=cbind(sv.score,tct,pws)
     writeBin(as.vector(outputs),file.path(tmpdir,paste0('tf.',pwmid,'-',ncoords[chrids[i]],'.out.bin')),8)
@@ -108,7 +103,7 @@ getopp <- function(x){
     svcut = sort(vcut)
     maxl=min(50000,length(sorted))
     minl=min(length(sorted)/2, 100)
-    ops=(findInterval(-(sorted[minl:maxl]),rev(-svcut))+10)/(minl:maxl)	
+    ops=(findInterval(-(sorted[minl:maxl]),rev(-svcut))+10)/(minl:maxl)
     list(objective=min(ops),minimum=which.min(ops))
 }
 
@@ -146,15 +141,6 @@ coords.vec=do.call(c,lapply(1:length(validpos),function(i){
     start(coords[clengths>0][[chrids[i]]])
 }))
 
-if(!is.null(whitelist)){
-    chrs.vec=do.call(c,lapply(1:length(validpos),function(i){
-        rep(ncoords[chrids[i]],length(coords[clengths>0][[chrids[i]]]))[whitelist.pass[[chrids[i]]]]
-    }))
-    coords.vec=do.call(c,lapply(1:length(validpos),function(i){
-        start(coords[clengths>0][[chrids[i]]])[whitelist.pass[[chrids[i]]]]
-    }))
-}
-
 df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=capf(allsvs),score=scores,purity=purity[rank(-scores)])
 df.bg=df.all[passed.cutoff,]
 
@@ -179,33 +165,37 @@ legend('bottomright',col=c('black','red','green'),lwd=1,legend=c('+strand','-str
 plot(seq(stepsz,50,by=stepsz),1/(1+alloptim*ct.ratio),type='l',main='Sequence dependence vs max purity',xlab='inverse sequence dependence',ylab='max purity',log='x')
 abline(v=opt.pwm.weight$minimum)
 #
-layout(matrix(c(1,3,2,2),2,2,byrow=T))
+layout(matrix(c(1,3,4,2,2,2),2,3,byrow=T))
 plot(density(scores,bw=0.1),type='l',xlab='score',ylab='density',main='Scores for \n motif match (black) vs background (red)')
 points(density(neg.scores,bw=0.1),type='l',col='red')
 abline(v=cutv)
 spos = scores
 npos = pwb+capf(neglis)*opt.pwm.weight$minimum
 samp=sample(1:length(allpws),50000,replace=T)
+samp.neg=sample(1:length(pwb),50000,replace=T)
 plot(allpws[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1],xlab='PWM score',ylab='DNase score',main='Distribution of PWM and DNase scores in pwm match (black) vs ctrl (red)\n with called sites (bold)')
-points(pwb[samp],capf(neglis[samp]),pch='.',col='red')
+points(pwb[samp.neg],capf(neglis[samp.neg]),pch='.',col='red')
 plot(allcts[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1],main='Chromatin dependence of DNase score',xlab='Summed counts',ylab='DNase score')
+plot(density(log(allcts+1,10),bw=0.1),type='l',xlab='counts',ylab='density',main='Reads in 1kb for \n motif match (black) vs background (red)')
+points(density(log(negcts+1,10),bw=0.1),type='l',col='red')
 dev.off()
 
+if(wsize > 200){
 center = c(wsize + (-199:199))
-bgpluscts = do.call(c,lapply(list.files(tmpdir,paste0('background.tf',pwmid,'-')),function(i){
-    load(file.path(tmpdir,i))
+bgpluscts = do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
+    load(file.path(datadir,i))
     colSums(pos.mat[center,,drop=F])
 }))
-bgnegcts = do.call(c,lapply(list.files(tmpdir,paste0('background.tf',pwmid,'-')),function(i){
-    load(file.path(tmpdir,i))
+bgnegcts = do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
+    load(file.path(datadir,i))
     colSums(neg.mat[center,,drop=F])
 }))
-pluscts = do.call(c,lapply(list.files(tmpdir,paste0('positive.tf',pwmid,'-')),function(i){
-    load(file.path(tmpdir,i))
+pluscts = do.call(c,lapply(list.files(datadir,paste0('positive.tf',pwmid,'-')),function(i){
+    load(file.path(datadir,i))
     colSums(pos.mat[center,,drop=F])
 }))
-negcts = do.call(c,lapply(list.files(tmpdir,paste0('positive.tf',pwmid,'-')),function(i){
-    load(file.path(tmpdir,i))
+negcts = do.call(c,lapply(list.files(datadir,paste0('positive.tf',pwmid,'-')),function(i){
+    load(file.path(datadir,i))
     colSums(neg.mat[center,,drop=F])
 }))
 pwsub=order(-allpws)[1:min(10000,length(allpws))]
@@ -215,3 +205,4 @@ pio.plus = log((sum(pluscts[pwsub]*prank2)/sum(prank2))/(mean(bgpluscts[pwsub]))
 pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts[pwsub])))/log(2)
 pio.value = (pio.plus+pio.neg)*2
 writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-chropen.txt')))
+}

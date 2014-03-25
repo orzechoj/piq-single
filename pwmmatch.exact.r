@@ -7,16 +7,18 @@ options(echo=TRUE)
 args <- commandArgs(trailingOnly = TRUE)
 print(args)
 
-commondir = args[1]
+commonfile = args[1]
 jaspardir = args[2]
-id = as.double(args[3])
+pwmid = as.double(args[3])
 outdir = args[4]
 
-if(file.exists(paste0(outdir,id,'.pwmout.RData'))){
+outdir=paste0(outdir,'/')
+source(commonfile)
+if(!overwrite & file.exists(paste0(outdir,pwmid,'.pwmout.RData'))){
   stop("pwm file already exists")
 }
 
-source(commondir)
+
 
 ####
 # load PWMs
@@ -38,7 +40,7 @@ importJaspar <- function(file=myloc) {
 }
 pwmtable <- importJaspar(jaspardir)
 
-pwmnum = id
+pwmnum = pwmid
 pwmin = pwmtable[[pwmnum]]
 pwmname = names(pwmtable)[pwmnum]
 
@@ -65,10 +67,47 @@ if(!match.rc){
 #chr names
 chrstr = seqnames(genome)
 
+if(exists('blacklist') & !is.null(blacklist)){
+    blacktable=read.table(blacklist)
+}
+
+if(exists('whitelist') & !is.null(whitelist)){
+    whitetable=read.table(whitelist)
+}
+
 coords.list = lapply(chrstr,function(i){
     print(i)
-    mpwm=matchPWM(pwuse,genome[[i]],min.score=motifcut)
-    pscore=PWMscoreStartingAt(pwuse,as(genome[[i]],"DNAString"),start(mpwm))
+    gi=genome[[i]]
+    if(remove.repeatmask){
+        active(masks(gi)) <- rep(T,length(masks(gi)))
+    }
+    if(exists('blacklist') & !is.null(blacklist)){
+        blacksel= blacktable[,1]==i
+        if(sum(blacksel)>0){
+            flsize = wsize*flank.blacklist
+            ir=intersect(IRanges(1,length(gi)),reduce(IRanges(blacktable[blacksel,2]-flsize,blacktable[blacksel,3]+flsize)))
+            mask=Mask(length(gi),start(ir),end(ir))
+            masks(gi) = append(masks(gi),mask)
+        }
+    }
+    if(exists('whitetable')){
+        whitesel=whitetable[,1]==i
+        if(sum(whitesel)>0){
+            wchr=whitetable[whitesel,,drop=F]
+            ir=IRanges(wchr[,2],wchr[,3])
+            air=IRanges(1,length(gi))
+            nir=setdiff(air,ir)
+            rir=reduce(IRanges(start(nir)-wsize,end(nir)+wsize))
+            maskr=intersect(rir,air)
+            mask = Mask(length(gi),start(maskr),end(maskr))
+            masks(gi) = append(masks(gi),mask)
+        }else{
+            mask = Mask(length(gi),1,length(gi))
+            masks(gi) = append(masks(gi),mask)
+        }
+    }
+    mpwm=matchPWM(pwuse,gi,min.score=motifcut)
+    pscore=PWMscoreStartingAt(pwuse,as(gi,"DNAString"),start(mpwm))
     list(mpwm,pscore)
 })
 
@@ -88,12 +127,13 @@ coords.pwm=lapply(coords.list,function(i){i[[2]][i[[2]]>pwmcut2]})
 #coords=lapply(coords.list,unlist)
 
 clengths=sapply(coords,length)
+print(sum(clengths))
 coords.short=coords[clengths>0]
 names(coords.short)=chrstr[clengths>0]
 ncoords=chrstr[clengths>0]#names(coords)
 coords2=sapply(coords.short,flank,width=wsize,both=T)
 
-save(coords,coords.pwm,ipr,pwmin,pwmname,chrstr,clengths,coords.short,ncoords,coords2,file=paste0(outdir,id,'.pwmout.RData'))
+save(coords,coords.pwm,ipr,pwmin,pwmname,chrstr,clengths,coords.short,ncoords,coords2,file=paste0(outdir,pwmid,'.pwmout.RData'))
 
 }else{
 clengths=0

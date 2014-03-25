@@ -6,14 +6,14 @@ source('common.global.r')
 #match reverse complement (setting to T matches ONLY the R.C.)
 match.rc = F
 # load genome file
-genome = Hsapiens
 suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19"))
+genome = Hsapiens
 
 #####
 # Run mode options
 
 #if a file indicating completion is found; exit.
-overwrite=F
+overwrite=T
 #purity of calls
 purity.cut = 0.7
 
@@ -23,7 +23,7 @@ purity.cut = 0.7
 #motif score cutoff (log)
 motifcut = 5
 #max candidate sites (default 500k)
-maxcand = 500000
+maxcand = 100000
 
 #####
 # Approx motif match options
@@ -38,3 +38,16 @@ nkmer = 5000000
 
 #whitelist = '/cluster/thashim/PIQ/capture.mm10.bed'
 whitelist = NULL
+
+#example - encode hg19 blacklists
+#system('wget -O /cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz')
+blacklist = '/cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz'
+#disable blacklist by setting to NULL
+#blacklist = NULL
+
+#should blacklist just prevent motif matches at the blacklist, or also drop [-wsize,wsize] regions around them.
+flank.blacklist = T
+
+###
+# blacklist repeatmask, does not work for yeast.
+remove.repeatmask = T

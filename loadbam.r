@@ -11,7 +11,7 @@ coords2=sapply(coords.short,flank,width=wsize,both=T)
 
 obschrnames=names(allreads)
 preads=allreads[[obschrnames[1]]]$plus
-cutat=sort(rle(preads)$lengths,T)[200]
+cutat=max(sort(rle(preads)$lengths,T)[1000],1)
 
 #stablize the variance (helps when there are few high coverage sites).
 tfun <- function(x){
@@ -21,7 +21,7 @@ tfun <- function(x){
     y
 }
 
-unlink(paste0(tmpdir,'*tf',pwmid,'*'))
+unlink(paste0(tmpdir,'/',pwmid,'/','*tf',pwmid,'*'))
 
 use.w=!is.null(whitelist)
 if(use.w){
@@ -33,20 +33,11 @@ if(use.w){
     names(white.list)=levels(wtable[,1])
 }
 
+dir.create(paste0(tmpdir,'/',pwmid),recursive=T)
 makeTFmatrix <- function(coords,prefix='',offset=0){
     cwidth = width(coords[[1]][1])
     obschrnames=names(allreads)
     validchr = obschrnames[which(obschrnames%in%ncoords)]
-    if(use.w){
-        validchr= validchr[validchr%in%names(white.list)]
-        coords=lapply(validchr,function(i){
-            pwmhits=coords[[i]]
-            white.list.chr=white.list[[i]]
-            fos=findOverlaps(pwmhits,white.list.chr,type='within')
-            pwmhits[queryHits(fos)]
-        });names(coords)=validchr
-        validchr=validchr[sapply(coords,length)>0]
-    }
     readcov=sapply(validchr,function(i){length(allreads[[i]]$plus)+length(allreads[[i]]$minus)})/seqlengths(genome)[validchr]
     readfact = readcov/readcov[1]
     slen = seqlengths(genome)
@@ -57,7 +48,6 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
         print(chr)
         if(prefix=='background.'){
             nsites = max(length(coords[[chr]]),minbgs[chr])
-            #coind = sample(1:(chrlen),nsites,replace=T)
             coind = sample(start(coords[[chr]]),nsites,replace=T)+offset
             if(use.w){
                 wchr=white.list[[chr]]
@@ -65,9 +55,7 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
                 csamp = sample(1:length(wlarge),nsites,prob=(width(wlarge)-(2*wsize)),replace=T)
                 starts = start(wlarge)[csamp]
                 ends = end(wlarge)[csamp]
-                coind=do.call(c,lapply(1:length(csamp),function(i){
-                    sample((starts[i]+wsize):(ends[i]-wsize),1)
-                }))
+                coind=floor((ends-starts - 2*wsize) * runif(length(csamp)))+(starts+wsize)
             }
             chrcoord=sort(IRanges(start=coind-wsize,width=2*wsize))
         }else{
@@ -105,7 +93,7 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
             neg.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
         }
 #
-        save(pos.mat,neg.mat,pos.triple,neg.triple,file=paste0(tmpdir,prefix,'tf',pwmid,'-',chr,'.RData'))
+        save(pos.mat,neg.mat,pos.triple,neg.triple,file=paste0(tmpdir,'/',pwmid,'/',prefix,'tf',pwmid,'-',chr,'.RData'))
 	gc()
     }
 }

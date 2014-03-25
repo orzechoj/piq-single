@@ -35,7 +35,7 @@ names(allreads)=obschrnames
 
 save(allreads,file=bamout)
 
-}{
+}else{
 #else multiple replicates to merge..
     bamnames = args[3:length(args)]
 
