@@ -25,9 +25,13 @@ minusstrand = readBamGappedAlignments(bamname,param=minusflags)
 obschrnames=levels(c(seqnames(plusstrand),seqnames(minusstrand)))
 allreads=lapply(obschrnames,function(chr){
 	print(chr)
-        select = (seqnames(plusstrand)==chr) & (mcols(plusstrand)$mapq > mapq)
+        qsel = (mcols(plusstrand)$mapq > mapq)
+        if(any(is.na(qsel))) qsel = T
+        select = (seqnames(plusstrand)==chr) & qsel
 	pluscoord=start(plusstrand[select])
-        select = (seqnames(minusstrand)==chr) & (mcols(minusstrand)$mapq > mapq)
+        qsel = (mcols(minusstrand)$mapq > mapq)
+        if(any(is.na(qsel))) qsel = T
+        select = (seqnames(minusstrand)==chr) & qsel
         minuscoord=start(minusstrand[select])
 	list(plus=pluscoord,minus=minuscoord)
 })
