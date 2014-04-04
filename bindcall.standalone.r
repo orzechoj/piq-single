@@ -20,7 +20,7 @@ tmpdir = args[3]
 outdir = args[4]
 
 #location of the bam RData file made by bam2rdata.r
-bamfile = args[5]
+bamdir = args[5]
 
 #which pwm file to use in pwmdir
 pwmid = args[6]
@@ -38,7 +38,7 @@ load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 #####
 # make call
-datadir = paste0(tmpdir,'/',pwmid,'/')
+datadir = paste0(bamdir,'/',pwmid,'/')
 
 osvr=order(-sv.rotate[-(1:2)])+2
 sv.rotate[osvr[1:(2*ncol(pwmin))]] = sort(sv.rotate,decreasing=T)[(2*ncol(pwmin)+1)]
