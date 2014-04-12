@@ -137,7 +137,7 @@ save(coords,coords.pwm,ipr,pwmin,pwmname,chrstr,clengths,coords.short,ncoords,co
 
 }else{
 clengths=0
-save(clengths,file=paste0(outdir,id,'.pwmout.RData'))
+save(clengths,file=paste0(outdir,pwmid,'.pwmout.RData'))
 }
 
 #
