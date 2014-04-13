@@ -3,6 +3,9 @@ source('common.global.r')
 #####
 # Check before running
 
+#minimum map quality
+mapq = 1
+
 #match reverse complement (setting to T matches ONLY the R.C.)
 match.rc = F
 # load genome file
@@ -41,9 +44,9 @@ whitelist = NULL
 
 #example - encode hg19 blacklists
 #system('wget -O /cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz')
-blacklist = '/cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz'
+#blacklist = '/cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz'
 #disable blacklist by setting to NULL
-#blacklist = NULL
+blacklist = NULL
 
 #should blacklist just prevent motif matches at the blacklist, or also drop [-wsize,wsize] regions around them.
 flank.blacklist = T

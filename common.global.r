@@ -50,8 +50,6 @@ suppressMessages(require(Matrix,quietly=T))
 ####
 # params
 
-#minimum map quality
-mapq = 1
 
 #window size
 wsize = 1000
