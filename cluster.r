@@ -6,50 +6,60 @@ source(commonfile)
 #tmpdir
 #outdir
 
-
 #####
 # make bg
+datadir = paste0(tmpdir,'/',pwmid,'/')
 
-load(file.path(tmpdir,paste0('background.tf',pwmid,'-chr1.RData')))
+nsites = Reduce('+',lapply(list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T),function(i){load(i);ncol(pos.mat)}))
+if(nsites < 100){fast.mode=F}
+
+load(file.path(datadir,paste0('background.tf',pwmid,'-',seqnames(genome)[1],'.RData')))
+
+if( two.pass & file.exists(paste0(outdir,'/params/twopass.RData')) ){
+    load(paste0(outdir,'/params/twopass.RData'))
+    tmat.pos = cov.premade[1:(2*wsize),]
+    tmat.neg = cov.premade[(2*wsize+1):(4*wsize),]
+}
 
 #use precomputed tables if wsize is 1000
-if( (!fast.mode) & (wsize = 1000)){
+if( (!fast.mode) & (wsize <= 1000)){
     load('precalc/cov.premade.RData')
-    tmat.pos = cov.premade[1:(2*wsize),]
-    tmat.neg = cov.premade[((1:(2*wsize)) + (2*wsize)),]
+    subsel = 1000+(-(wsize-1):wsize)
+    tmat.pos = cov.premade[subsel,]
+    tmat.neg = cov.premade[subsel + (2000),]
 }
 
 #require at least 30k sites to do a background estimate
 if((ncol(pos.mat) > 30000) & (!fast.mode) & (wsize != 1000)){
-
 source('covfun.r')
-
 require(Matrix)
-
-bgwsize=2
-alldat=do.call(rbind,lapply(seq(1,ncol(pos.mat),by=max(bgwsize,ncol(pos.mat)/500)),function(offs){
-	datin = t(rBind(pos.mat[1:bgwsize+offs,],neg.mat[1:bgwsize+offs,]))^2
-	datin[datin>2]=2
-	as.matrix(datin)
+lf=list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
+bgwsize=2*wsize
+pmc=Reduce('+',lapply(lf,function(i){
+    print(i)
+    load(i)
+    m=rBind(pos.mat[1:bgwsize,],neg.mat[1:bgwsize,])
+    m%*%t(m)
 }))
-
-datin=alldat
-
+alldat=do.call(cBind,lapply(lf,function(i){
+    load(i)
+    rBind(pos.mat[1:bgwsize,],neg.mat[1:bgwsize,])
+}))
+datin=t(as.matrix(alldat[,1:min(ncol(alldat),30000)]))
+datin[datin>3]=3
 stabval=4
 mustab=-3
 sz=ncol(datin)
 bind=makeblocks(1:bgwsize,2)
 tabs = makeTable(datin,mustab,stabval)
 matin=matrix(tabs[[1]][as.double(datin)+1],nrow(datin))
-covbase = cov(matin)
+covbase = (pmc-min(pmc))/(pmc[1,1]-min(pmc))
 covin=topiter(covbase,bind)
 sci=solve(covin)
 muin= mustab
 mupri=rep(muin,sz)%*%sci
 scid = solve(sci+diag(rep(tabs[[2]][1],sz)))
-
-
-for(m in 1:5){
+for(m in 1:3){
     print(m)
     musum=rep(0,ncol(covin))
     devsum=0
@@ -58,7 +68,7 @@ for(m in 1:5){
     sqmuT=matrix(0,ncol(covin),ncol(covin))
     muT=rep(0,ncol(covin))
     tct=0
-    numex=min(nrow(datin),50000)
+    numex=min(nrow(datin),5000)
     for(i in sample(1:nrow(datin),numex)){
         #print(i)
         ff=fastFit(datin[i,],mupri,tabs[[1]],tabs[[2]],scid)
@@ -88,27 +98,36 @@ for(m in 1:5){
     mupri=muhat%*%sci
     scid = solve(sci+diag(rep(tabs[[2]][1],sz)))
 }
-
 spp = toepvals(cpost,bind)
-w.both = 100
+w.both = 2*wsize
 mb=makeblocks(1:w.both,1)[1:bgwsize]
-covmat.pos=solve(toeptomat(spp[1:bgwsize],mb,w.both))
-covmat.neg=solve(toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both))
-
-pv=toepvals(covmat.pos,mb)
-nv=toepvals(covmat.neg,mb)
-
-rot.pos = matrix(0,wsize*2,wsize*2)
-rot.pos[lower.tri(rot.pos,diag=T)]=pv[1]/max(pv)
-rot.neg = matrix(0,wsize*2,wsize*2)
-rot.neg[lower.tri(rot.neg,diag=T)]=nv[1]/max(nv)
-
-tmat.pos = cbind(rot.pos, matrix(0,2*wsize,2*wsize))
-tmat.neg = cbind(matrix(0,2*wsize,2*wsize), rot.neg)
-
+covmat.pos=toeptomat(spp[1:bgwsize],mb,w.both)
+covmat.neg=toeptomat(spp[1:200 + (3*bgwsize)],mb,w.both)
+nsites=pos.cov=Reduce('+',lapply(lf,function(i){load(i);ncol(pos.mat)}))
+pos.ss=Reduce('+',lapply(lf,function(i){load(i);m=pos.mat;m%*%t(m);}))
+pos.ev=Reduce('+',lapply(lf,function(i){load(i);rowSums(pos.mat)}))
+pos.cov = pos.ss/nsites - outer(pos.ev/nsites,pos.ev/nsites,'*')
+neg.ss=Reduce('+',lapply(lf,function(i){load(i);m=neg.mat;m%*%t(m);}))
+neg.ev=Reduce('+',lapply(lf,function(i){load(i);rowSums(neg.mat)}))
+neg.cov = neg.ss/nsites - outer(neg.ev/nsites,neg.ev/nsites,'*')
+mfpos=min(min(eigen(pos.cov,only.values=T)$values)/abs(min(eigen(covmat.pos,only.values=T)$values)),1)
+mfneg=min(min(eigen(neg.cov,only.values=T)$values)/abs(min(eigen(covmat.neg,only.values=T)$values)),1)
+ecpos=eigen(pos.cov+covmat.pos*mfpos^2)
+ecneg=eigen(neg.cov+covmat.neg*mfneg^2)
+ecsel = 1:ncol(ecpos$vectors)
+ecpv = ecpos$values
+ecnv = ecneg$values
+ecpv[ecpv > 10]=10
+ecpv[ecpv < 1]=1
+ptrans = t(t(ecpos$vectors[,ecsel])*(sqrt(ecpv[ecsel])))
+ecnv[ecnv > 10]=10
+ecnv[ecnv < 1]=1
+ntrans = t(t(ecneg$vectors[,ecsel])*(sqrt(ecnv[ecsel])))
+tmat.pos = cbind(ptrans, matrix(0,2*wsize,2*wsize))
+tmat.neg = cbind(matrix(0,2*wsize,2*wsize), ntrans)
 }else{
-	rot.pos = diag(wsize*2)	
-	rot.neg = diag(wsize*2)	
+	rot.pos = diag(wsize*2)
+	rot.neg = diag(wsize*2)
 }
 
 
@@ -116,71 +135,56 @@ tmat.neg = cbind(matrix(0,2*wsize,2*wsize), rot.neg)
 #####
 # make svlite
 
+converter.src <- '
+Rcpp::NumericMatrix triplePos(rtriplePos);
+Rcpp::NumericMatrix tripleNeg(rtripleNeg);
+Rcpp::NumericVector sums(rsum);
+int label = as<int>(rlabel);
+int negoff = as<int>(rnegoff);
+Rcpp::CharacterVector cv(sums.size());
+int tripleindPos = 0;
+int tripleindNeg = 0;
+for(int i=0; i < sums.size(); i++){
+  char str[65536];
+  double sumct = sums[i];
+  int cp = snprintf(str, 65536, "%d %d:%f", label, 1, sumct);
+  while(tripleindPos < triplePos.nrow() && triplePos(tripleindPos,0)-1 == i){
+    int crd = triplePos(tripleindPos,1)+1;
+    double wt = triplePos(tripleindPos,2);
+    cp += snprintf(str + cp, 65536-cp, " %d:%f", crd, wt);
+    tripleindPos++;
+  }
+  while(tripleindNeg < tripleNeg.nrow() && tripleNeg(tripleindNeg,0)-1 == i){
+    int crd = tripleNeg(tripleindNeg,1)+1+negoff;
+    double wt = tripleNeg(tripleindNeg,2);
+    cp += snprintf(str + cp, 65536-cp, " %d:%f", crd, wt);
+    tripleindNeg++;
+  }
+  cv[i] = str;
+}
+return cv;
+'
+converter <- cxxfunction(signature(rtriplePos="numeric",rtripleNeg="numeric",rsum="numeric",rnegoff="integer",rlabel="integer"),converter.src,plugin="Rcpp",includes="#include <stdio.h>")
+
+sumtr <-function(x){
+    x
+}
 
 makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
-    print('loaded')
-    if(!fast.mode){
-        pm = suppressMessages(t(rot.pos)%*%pos.mat)
-        nm = suppressMessages(t(rot.neg)%*%neg.mat)
-    }else{
-        pm = pos.mat
-        nm = neg.mat
-    }
-    print('findind')
-    if(ncol(pm)>1){
-    posind=lapply(1:ncol(pm),function(i){
-        j=pm[,i]
-        rbind(which(j!=0),j[j!=0])
-    })
-    }else{
-    posind=list(rbind(which(pm[,1]!=0),pm[pm[,1]!=0,1]))
-    }
-    if(ncol(nm)>1){
-    negind=lapply(1:ncol(nm),function(i){
-        j=nm[,i]
-        rbind(which(j!=0),j[j!=0])
-    })
-    }else{
-    negind=list(rbind(which(nm[,1]!=0),nm[nm[,1]!=0,1]))	
-    }
-    print('runret')
-    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
-    sel = which(rct>minread)
-    ret=sapply(sel,function(i){
-        tct=rct[i]+1
-	if(tct > 1){
-	pid = posind[[i]][1,]
-	nid = negind[[i]][1,]
-	pval = posind[[i]][2,]
-	nval = negind[[i]][2,]
-        if(length(pid) > 0){
-	cpos = paste0(pid+1,':',pval)
-	}else{
-	cpos = character(0)
-	}
-	if(length(nid) > 0){
-	cneg = paste0(nid+1+2*wsize,':',nval)
-	}else{
-	cneg = character(0)
-	}}else{
-	cpos = character(0)
-	cneg = character(0)
-	}
-        paste0(c(label,paste0(1,":",tct),cpos,cneg),collapse=' ')
-    })
-    if(length(sel)==0){ret = character(0)}
-    ret
+    rct=sumtr(colSums(pos.mat)+colSums(neg.mat))+1
+    cv=converter(pos.triple,neg.triple,rct,2*wsize,label)
+    cv[rct>(sumtr(minread)+1)]
 }
 
-
 if(fast.mode){
-validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
-vptrain=validpos
-allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10,rot.pos=rot.pos,rot.neg=rot.neg))
 
-validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T)
+vptrain=validpos
+allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10*wsize/1000,rot.pos=rot.pos,rot.neg=rot.neg))
+
+validneg = list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
 vntrain=validneg
 allneg=do.call(c,lapply(vntrain,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
 
@@ -192,10 +196,12 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 #####
 # calc fig
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=10000/length(allpos),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+itmax=min(5e+07,500*length(allpos))
 
-vpos=suppressMessages(as.vector(rot.pos%*%(sv.fit$weights[2+(1:(2*wsize))])))
-vneg=suppressMessages(as.vector(rot.neg%*%(sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=10000/length(allpos),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
+
+vpos=suppressMessages(as.vector((sv.fit$weights[2+(1:(2*wsize))])))
+vneg=suppressMessages(as.vector((sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
 sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
 save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
@@ -203,23 +209,23 @@ save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 
 }else{
 
-validpos = list.files(tmpdir,paste0('positive.tf',pwmid,'-'),full.names=T)
-validneg = list.files(tmpdir,paste0('background.tf',pwmid,'-'),full.names=T)
+validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T)
+validneg = list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
 
 allnom = c('label','rct',paste0('x',1:ncol(tmat.pos)))
 alldat=rbind(
     do.call(rbind,lapply(validpos,function(i){
         print(i)
     load(i)
-    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
-    y=data.frame(label=1,rct[rct>10],x=t(as.matrix(t(tmat.pos)%*%pos.mat[,rct>10] + t(tmat.neg)%*%neg.mat[,rct>10])))
+    rct = sumtr(colSums(pos.mat) + colSums(neg.mat))+1
+    y=data.frame(label=1,rct[rct>(sumtr(11)+1)],x=t(as.matrix(t(tmat.pos)%*%pos.mat[,rct>(sumtr(11)+1)] + t(tmat.neg)%*%neg.mat[,rct>(sumtr(11)+1)])))
     colnames(y)=allnom
     y
 })),
     do.call(rbind,lapply(validneg,function(i){
     print(i)
     load(i)
-    rct = (colSums(pos.mat>0) + colSums(neg.mat>0))
+    rct = sumtr(colSums(pos.mat) + colSums(neg.mat))+1
     y=data.frame(label=-1,rct,x=t(as.matrix(t(tmat.pos)%*%pos.mat + t(tmat.neg)%*%neg.mat)))
     colnames(y)=allnom
     y
@@ -227,7 +233,9 @@ alldat=rbind(
 
 write.svmlight(alldat[,1],as.matrix(alldat[,-1]),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=ncol(alldat),random_seed=1,lambda=10000/nrow(alldat),iterations=5e+07,learner_type='logreg-pegasos',eta_type='basic')
+itmax=min(5e+07,1000*sum(alldat[,1]==1))
+
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=ncol(alldat),random_seed=1,lambda=10000/sum(alldat[,1]==1),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
 
 sv.rotate=c(sv.fit$weights[1:2],tmat.pos%*%(sv.fit$weight[-(1:2)]),tmat.neg%*%(sv.fit$weight[-(1:2)]))
 

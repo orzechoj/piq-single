@@ -92,8 +92,6 @@ coords.list=lapply(chrstr,function(i){
     mpd=matchPDict(pd,genome[[i]])
 })
 
-
-
 coords.pwm=sapply(coords.list,function(i){
     ci=countIndex(i)
     cid=which(ci>0)

@@ -1,78 +1,56 @@
+source('common.global.r')
+
 #####
-# utils
+# Check before running
 
-old.repos <- getOption("repos")
-on.exit(options(repos = old.repos))
-new.repos <- old.repos
-new.repos["CRAN"] <- "http://cran.stat.ucla.edu"
-options(repos = new.repos)
+#minimum map quality
+mapq = 1
 
-#source("http://www.bioconductor.org/biocLite.R")
-if(!suppressMessages(require("BiocInstaller",quietly=T))){
-    install.packages("BiocInstaller", repos="http://www.bioconductor.org/packages/2.13/bioc")
-}
-
-ris <- function(x){if(!require(x,character.only=T,quietly=T,warn.conflicts=F)){
-    install.packages(x)
-    require(x,character.only=T,quietly=T,warn.conflicts=F)
-}}
-bis <- function(x){if(!require(x,character.only=T,quietly=T,warn.conflicts=F)){
-    biocLite(x)
-    require(x,character.only=T,quietly=T,warn.conflicts=F)
-}}
-
-wipetemp <- function(){
-    x <- readline("this will wipe existing temp files (y/n)")
-    if(x=="y"){
-        print("wiping temp")
-        unlink("tmp/*")
-    }else{
-        print("keeping temp")
-    }
-}
-
-set.seed(1)
-
-####
-# dependencies
-
-suppressMessages(require('BiocInstaller',quietly=T))
+#match reverse complement (setting to T matches ONLY the R.C.)
+match.rc = F
+# load genome file
 suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19"))
-suppressMessages(bis("Rsamtools"))
-suppressMessages(bis('Biostrings'))
+genome = Hsapiens
 
-suppressMessages(ris('RSofia'))
-suppressMessages(ris('statmod'))
-suppressMessages(require(Matrix,quietly=T))
-
-####
-# params
+#####
+# Run mode options
 
 #if a file indicating completion is found; exit.
-overwrite=F
-
-#number of kmer samples to draw
-nkmer = 5000000
-#motif score cutoff (log)
-motifcut = 5
-#motif informativeness cutoff (nats)
-basecut = 0
-#max candidate sites (default 500k)
-maxcand = 500000
-#match reverse complement (setting to T matches ONLY the R.C.)
-match.rc = T
-
-
-#window size
-wsize = 1000
-
-#fast mode
-fast.mode = T
-
+overwrite=T
 #purity of calls
 purity.cut = 0.7
 
-# load genome file
+#####
+# Motif options
 
-genome = Hsapiens
+#motif score cutoff (log)
+motifcut = 5
+#max candidate sites (default 500k)
+maxcand = 100000
 
+#####
+# Approx motif match options
+
+#number of kmer samples to draw
+nkmer = 5000000
+
+
+######
+# Optional: location of a whitelist directory. PWM matches will only be used if their window completely fits in the whitelist.
+# whitelist should be in .bed format.
+
+#whitelist = '/cluster/thashim/PIQ/capture.mm10.bed'
+whitelist = NULL
+
+#example - encode hg19 blacklists
+#system('wget -O /cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz')
+#blacklist = '/cluster/thashim/PIQ/enc.hg19.blacklist.bed.gz'
+#disable blacklist by setting to NULL
+blacklist = NULL
+
+#should blacklist just prevent motif matches at the blacklist, or also drop [-wsize,wsize] regions around them.
+flank.blacklist = T
+
+###
+# blacklist repeatmask, does not work for yeast.
+remove.repeatmask = T
