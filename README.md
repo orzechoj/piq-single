@@ -1,4 +1,3 @@
-
 IMPORTANT - READ ME
 ======================================
 
@@ -25,25 +24,19 @@ Running a single motif
 
 1. Generate the PWM hits across genome (does *not* depend on choice of BAM)
 
-    ~~~~
-	Rscript pwmmatch.exact.r /cluster/thashim/basepiq/common.r /cluster/thashim/basepiq/pwms/jasparfix.txt 139 /cluster/thashim/PIQ/motif.matches/
-	~~~~
+    `Rscript pwmmatch.exact.r /cluster/thashim/basepiq/common.r /cluster/thashim/basepiq/pwms/jasparfix.txt 139 /cluster/thashim/PIQ/motif.matches/`
 
     This uses the genome and PWM cutoffs in common.r with the 139th motif in jaspar.txt (CTCF) and writes the matches as a binary R file called 139.RData in tmppiq.
 
 2. Convert BAM to internal binary format (does *not* depend on choice of motif).
 
-    ~~~~~
-    Rscript bam2rdata.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/d0.RData /cluster/cwo/dnase_seq/bams/D0_50-100_130801.bwa.mapq20.mm10.bam
-	~~~~~
+    `Rscript bam2rdata.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/d0.RData /cluster/cwo/dnase_seq/bams/D0_50-100_130801.bwa.mapq20.mm10.bam`
 
     This takes the D0_50-100_130801.bwa.mapq20.mm10.bam file and retains only the read end locations, storing it into d0.RData.
 
 3. Combine BAM + PWM to make calls, depends on choice of BAM and PWM. If you have multiple simultaneous runs, make sure each run gets a unique tmp folder.
 
-    ~~~~
-    Rscript pertf.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/motif.matches/ /scratch/tmp/ /cluster/thashim/130130.mm10.d0/ /cluster/thashim/PIQ/d0.RData 139
-    ~~~~
+    `Rscript pertf.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/motif.matches/ /scratch/tmp/ /cluster/thashim/130130.mm10.d0/ /cluster/thashim/PIQ/d0.RData 139`
 
     This takes settings in common.r to call the motif match 139.RData (CTCF, from above) using data d0.RData (from bam2rdata) and writing the output into 130130.mm10.d0. The tmp folder stores some large temporary matrices and can be wiped after the run.
 
@@ -70,9 +63,8 @@ If you have control experiments such as genomic DNA or naked DNase-I digestion a
 2. Run PIQ on your background data once using your background data, with a separate temp directory such as /cluster/thashim/background.run
 
 3. Run bindcall.standalone.r invoking the following arguments
-    ~~~~
-    Rscript bindcall.standalone.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/motif.matches/ /cluster/thashim/training.run/ /cluster/thashim/background.output/ /cluster/thashim/background.run 139
-    ~~~~
+
+    `Rscript bindcall.standalone.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/motif.matches/ /cluster/thashim/training.run/ /cluster/thashim/background.output/ /cluster/thashim/background.run 139`
 
     This will use the profile / footprint learned from the training data and output scores on the background track.
 
