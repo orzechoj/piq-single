@@ -26,12 +26,14 @@ sumtr <-function(x){
 }
 
 evalsvs <- function(pos.mat,neg.mat,wt){
-    svps=suppressMessages(wt[(1:(2*wsize))+2]%*%pos.mat)
-    svns=suppressMessages(wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat)
+    svps=suppressMessages(wt[(1:nrow(pos.mat))+2]%*%pos.mat)
+    svns=suppressMessages(wt[(nrow(pos.mat)+1):(2*nrow(pos.mat))+2]%*%neg.mat)
     svps + svns + wt[1] + (sumtr(colSums(pos.mat)+colSums(neg.mat))+1) * wt[2]
 }
 
-posbgct = rep(0,2*wsize)
+load(file.path(datadir,paste0('background.tf',pwmid,'-',seqnames(genome)[1],'.RData')))
+
+posbgct = rep(0,nrow(pos.mat))
 
 neglis=do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
     print(i)
@@ -49,8 +51,8 @@ negcts=do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),fu
 }))
 
 rowsizes = rep(0,length(validpos))
-posct=rep(0,2*wsize)
-negct=rep(0,2*wsize)
+posct=rep(0,nrow(pos.mat))
+negct=rep(0,nrow(pos.mat))
 
 for(i in 1:length(validpos)){
     print(i)

@@ -124,20 +124,21 @@ int negoff = as<int>(rnegoff);
 Rcpp::CharacterVector cv(sums.size());
 int tripleindPos = 0;
 int tripleindNeg = 0;
+int len = 65536 * 10;
 for(int i=0; i < sums.size(); i++){
-  char str[65536];
+  char str[len];
   double sumct = sums[i];
   int cp = snprintf(str, 65536, "%d %d:%f", label, 1, sumct);
-  while(tripleindPos < triplePos.nrow() && triplePos(tripleindPos,0)-1 == i){
-    int crd = triplePos(tripleindPos,1)+1;
+  while(tripleindPos < triplePos.nrow() && triplePos(tripleindPos,1)-1 == i){
+    int crd = triplePos(tripleindPos,0)+1;
     double wt = triplePos(tripleindPos,2);
-    cp += snprintf(str + cp, 65536-cp, " %d:%f", crd, wt);
+    cp += snprintf(str + cp, len-cp, " %d:%f", crd, wt);
     tripleindPos++;
   }
-  while(tripleindNeg < tripleNeg.nrow() && tripleNeg(tripleindNeg,0)-1 == i){
-    int crd = tripleNeg(tripleindNeg,1)+1+negoff;
+  while(tripleindNeg < tripleNeg.nrow() && tripleNeg(tripleindNeg,1)-1 == i){
+    int crd = tripleNeg(tripleindNeg,0)+1+negoff;
     double wt = tripleNeg(tripleindNeg,2);
-    cp += snprintf(str + cp, 65536-cp, " %d:%f", crd, wt);
+    cp += snprintf(str + cp, len-cp, " %d:%f", crd, wt);
     tripleindNeg++;
   }
   cv[i] = str;
@@ -154,7 +155,9 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     print(filename)
     load(filename)
     rct=sumtr(colSums(pos.mat)+colSums(neg.mat))+1
-    cv=converter(pos.triple,neg.triple,rct,2*wsize,label)
+    pms=as.matrix(summary(pos.mat))
+    pns=as.matrix(summary(neg.mat))
+    cv=converter(pms,pns,rct,nrow(pos.mat),label)
     cv[rct>(sumtr(minread)+1)]
 }
 
@@ -178,10 +181,11 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
 itmax=min(5e+07,500*length(allpos))
 
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=4*wsize+2,random_seed=1,lambda=10000/length(allpos),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
+wsz = 2*nrow(pos.mat)+2
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=wsz,random_seed=1,lambda=10000/length(allpos),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
 
-vpos=suppressMessages(as.vector((sv.fit$weights[2+(1:(2*wsize))])))
-vneg=suppressMessages(as.vector((sv.fit$weights[2+(1:(2*wsize))+(2*wsize)])))
+vpos=suppressMessages(as.vector((sv.fit$weights[2+(1:(nrow(pos.mat)))])))
+vneg=suppressMessages(as.vector((sv.fit$weights[2+(1:(nrow(pos.mat)))+(nrow(pos.mat))])))
 sv.rotate = c(sv.fit$weights[1:2],vpos,vneg)
 
 save(sv.fit,sv.rotate,file=file.path(tmpdir,paste0(pwmid,'.svout.RData')))
