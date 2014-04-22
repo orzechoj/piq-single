@@ -34,7 +34,9 @@ allreads=lapply(obschrnames,function(chr){
         if(any(is.na(qsel))) qsel = T
         select = (seqnames(minusstrand)==chr) & qsel
         minuscoord=start(minusstrand[select])
-	list(list(plus=pluscoord,minus=minuscoord))
+        lx=list(list(plus=pluscoord,minus=minuscoord))
+        names(lx)=bamnames
+        lx
 })
 names(allreads)=obschrnames
 
