@@ -119,10 +119,10 @@ rm(allpwm)
 print(pwmcut2)
 
 coords=lapply(1:length(coords.list),function(i){
-    as(coords.list[[i]][[1]],'IRanges')[coords.list[[i]][[2]] > pwmcut2]
+    as(coords.list[[i]][[1]],'IRanges')[coords.list[[i]][[2]] >= pwmcut2]
 })
 
-coords.pwm=lapply(coords.list,function(i){i[[2]][i[[2]]>pwmcut2]})
+coords.pwm=lapply(coords.list,function(i){i[[2]][i[[2]] >= pwmcut2]})
 
 #coords=lapply(coords.list,unlist)
 
