@@ -20,7 +20,7 @@ bamname = args[3]
 bamnames=bamname
 
 flags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
-reads = readBamGappedAlignmentPairs(bamname,param=plusflags)
+reads = readBamGappedAlignmentPairs(bamname,param=flags)
 lreads= left(reads)
 rreads= right(reads)
 fraglen = end(rreads)-start(lreads)
