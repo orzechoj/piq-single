@@ -33,6 +33,8 @@ if(overwrite==F & file.exists( file.path(outdir,paste0(pwmid,'-diag.pdf')))){
 
 debugstring = c('loading pwm','loadbam','clustering','binding outputs')
 
+dump.bed = T
+
 tryCatch({
 phase=0
 load(paste0(pwmdir,pwmid,'.pwmout.RData'))

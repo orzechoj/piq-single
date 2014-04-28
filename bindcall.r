@@ -147,9 +147,17 @@ df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=capf(allsvs),sc
 df.bg=df.all[passed.cutoff,]
 
 pwname.short = gsub("[[:punct:]]","",pwmname)
+if(match.rc){
+    pwname.short=paste0(pwname.short,'RC')
+}
 
 write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.csv')))
 write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.all.csv')))
+if(dump.bed){
+    ss1=paste(df.all$chr,as.integer(df.all$coord),as.integer(df.all$coord) + ncol(ipr), pwname.short, floor(as.numeric(df.all$purity)*1000), c('+','-')[match.rc+1],sep='\t')
+    trackline=paste0('track name=',pwname.short,' description=\"PIQ calls for ',pwname.short,' \" useScore=1')
+    writeLines(c(trackline,ss1),file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.all.bed')))
+}
 
 laymat = matrix(c(1,4,2,3),2,2,byrow=T)
 
