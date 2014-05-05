@@ -4,7 +4,7 @@ source(commonfile)
 #bamfile
 load(bamfile)
 #pwmfile
-load(paste0(pwmdir,pwmid,'.pwmout.RData'))
+#load(paste0(pwmdir,pwmid,'.pwmout.RData'))
 #tmpdir
 
 bamnames = names(allreads[[1]])

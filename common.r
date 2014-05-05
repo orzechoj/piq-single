@@ -6,8 +6,6 @@ source('common.global.r')
 #minimum map quality
 mapq = 1
 
-#match reverse complement (setting to T matches ONLY the R.C.)
-match.rc = F
 # load genome file
 suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19"))
 genome = Hsapiens

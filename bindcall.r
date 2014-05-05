@@ -2,7 +2,7 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
+#load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #outdir
@@ -148,7 +148,7 @@ df.bg=df.all[passed.cutoff,]
 
 pwname.short = gsub("[[:punct:]]","",pwmname)
 if(match.rc){
-    pwname.short=paste0(pwname.short,'RC')
+    pwname.short=paste0(pwname.short,'.RC')
 }
 
 write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.csv')))
@@ -190,7 +190,7 @@ plot(density(log(allcts+1,10),bw=0.1),type='l',xlab='counts',ylab='density',main
 points(density(log(negcts+1,10),bw=0.1),type='l',col='red')
 dev.off()
 
-if(wsize > 200){
+if(dump.chropen & wsize > 200){
 center = c(wsize + (-199:199))
 bgpluscts = do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
     load(file.path(datadir,i))
@@ -214,5 +214,5 @@ prank2=1/(1+exp(-log(prank)+log(1-prank)+1))
 pio.plus = log((sum(pluscts[pwsub]*prank2)/sum(prank2))/(mean(bgpluscts[pwsub])))/log(2)
 pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts[pwsub])))/log(2)
 pio.value = (pio.plus+pio.neg)*2
-writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-chropen.txt')))
+writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-',pwname.short,'-chropen.txt')))
 }
