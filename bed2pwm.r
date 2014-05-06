@@ -13,6 +13,9 @@ bedname = args[3]
 bedid = as.double(args[4])
 outdir = args[5]
 
+pwmname = bedname
+pwmid = bedid
+
 outdir=paste0(outdir,'/')
 source(commonfile)
 if(!overwrite & file.exists(paste0(outdir,pwmid,'.pwmout.RData'))){
@@ -24,9 +27,6 @@ if(!overwrite & file.exists(paste0(outdir,pwmid,'.pwmout.RData'))){
 ####
 # load PWMs
 ####
-
-pwmname = bedname
-pwmid = bedid
 
 require('GenomicRanges')
 rt = read.table(bedin)
