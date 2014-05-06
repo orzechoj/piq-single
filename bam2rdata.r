@@ -12,16 +12,22 @@ bamout = args[2]
 
 source(commonfile)
 
+if(exists('readGAlignmentsFromBam')){
+    readBam = readGAlignmentsFromBam
+}else{
+    readBam = readBamGappedAlignments
+}
+
 #if only one bam..
 if(length(args)==3){
 bamname = args[3]
 bamnames=bamname
 
 plusflags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isMinusStrand=F,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
-plusstrand = readBamGappedAlignments(bamname,param=plusflags)
+plusstrand = readBam(bamname,param=plusflags)
 
 minusflags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isMinusStrand=T,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
-minusstrand = readBamGappedAlignments(bamname,param=minusflags)
+minusstrand = readBam(bamname,param=minusflags)
 
 obschrnames=levels(c(seqnames(plusstrand),seqnames(minusstrand)))
 allreads=lapply(obschrnames,function(chr){
@@ -49,10 +55,10 @@ save(allreads,file=bamout)
     bamlist=lapply(bamnames,function(bamname){
         print(bamname)
         plusflags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isMinusStrand=F,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
-        plusstrand = readBamGappedAlignments(bamname,param=plusflags)
+        plusstrand = readBam(bamname,param=plusflags)
         #
         minusflags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isMinusStrand=T,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
-        minusstrand = readBamGappedAlignments(bamname,param=minusflags)
+        minusstrand = readBam(bamname,param=minusflags)
         list(plusstrand,minusstrand)
     })
 

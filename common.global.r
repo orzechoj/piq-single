@@ -38,6 +38,7 @@ set.seed(1)
 
 suppressMessages(require('BiocInstaller',quietly=T))
 suppressMessages(bis("Rsamtools"))
+suppressMessages(bis("GenomicAlignments"))
 suppressMessages(bis('Biostrings'))
 suppressMessages(bis('seqLogo'))
 
