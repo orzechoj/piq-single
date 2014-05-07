@@ -162,6 +162,7 @@ if(dump.bed){
 laymat = matrix(c(1,4,2,3),2,2,byrow=T)
 
 pdf(file.path(outdir,paste0(pwmid,'-',pwname.short,'-diag.pdf')),10,7)
+pwmin = pwmin + runif(length(pwmin))*1e-5
 seqLogo(t(t(pwmin)/colSums(pwmin)))
 layout(laymat)
 xseq=seq(1,length(purity),length=1000)
