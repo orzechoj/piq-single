@@ -1,6 +1,11 @@
 IMPORTANT - READ ME
 ======================================
 
+Frequently asked questions
+-----
+
+If you have a question [read me first](https://bitbucket.org/thashim/piq-single/wiki/FAQ)
+
 common.r
 -----
 MODIFY genome to fit your data, match bis("BSgenome.*") to your genome
