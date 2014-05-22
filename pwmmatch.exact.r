@@ -77,7 +77,7 @@ pwuse = ipr
 coords.list = lapply(chrstr,function(i){
     print(i)
     gi=genome[[i]]
-    if(remove.repeatmask){
+    if(remove.repeatmask & !is.null(masks(gi))){
         active(masks(gi)) <- rep(T,length(masks(gi)))
     }
     if(exists('blacklist') & !is.null(blacklist)){
@@ -150,7 +150,7 @@ pwuse = reverseComplement(ipr)
 coords.list = lapply(chrstr,function(i){
     print(i)
     gi=genome[[i]]
-    if(remove.repeatmask){
+    if(remove.repeatmask & !is.null(masks(gi))){
         active(masks(gi)) <- rep(T,length(masks(gi)))
     }
     if(exists('blacklist') & !is.null(blacklist)){
