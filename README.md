@@ -14,10 +14,6 @@ input files
 ----
 use jasparfix.txt in the pwms folder (all JASPAR including PBM hits) for a comprehensive list. If for whatever reason you only want JASPAR CORE hits, use jaspar.txt.
 
-reverse complements
-----
-Each run of PIQ will call either the forward or reverse complement match ***not*** both at the same time. Set reverse complement related options in common.r and run twice to get both strands.
-
 
 How to run
 =======================================
@@ -55,9 +51,11 @@ Special use cases
 
 #### Multiple replicates
 
-If you have multiple technical replicates, bam2rdata.r will take multiple bamfiles as part of its argument and combine them.
+If you have replicates, please merge them using samtools merge.
 
-You can also combine the bam files beforehand.
+#### Multiple experiments
+
+If you have multiple experiments in the same experimental condition but different assays, bam2rdata.r will take multiple bamfiles as part of its argument and use them simultaneously.
 
 #### Control experiments
 
@@ -88,7 +86,6 @@ Parameters
 
 Check before every run
 ----
-* **match.rc**
 * **Genome type**
 
 Quality control / blacklisting
