@@ -21,6 +21,7 @@ if(exists('readGAlignmentsFromBam')){
 #if only one bam..
 if(length(args)==3){
 bamname = args[3]
+bamnames=bamname
 
 plusflags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isMinusStrand=F,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
 plusstrand = readBam(bamname,param=plusflags)
@@ -39,7 +40,9 @@ allreads=lapply(obschrnames,function(chr){
         if(any(is.na(qsel))) qsel = T
         select = (seqnames(minusstrand)==chr) & qsel
         minuscoord=start(minusstrand[select])
-	list(plus=pluscoord,minus=minuscoord)
+        lx=list(list(plus=pluscoord,minus=minuscoord))
+        names(lx)=bamnames
+        lx
 })
 names(allreads)=obschrnames
 
@@ -65,15 +68,19 @@ save(allreads,file=bamout)
 
     allreads=lapply(obschrnames,function(chr){
 	print(chr)
-        pluscoord=do.call(c,lapply(bamlist,function(bam){
-            select = (seqnames(bam[[1]])==chr) & (mcols(bam[[1]])$mapq > mapq)
-            start(bam[[1]][select])
-        }))
-        minuscoord=do.call(c,lapply(bamlist,function(bam){
-            select = (seqnames(bam[[2]])==chr) & (mcols(bam[[2]])$mapq > mapq)
-            start(bam[[2]][select])
-        }))
-	list(plus=pluscoord,minus=minuscoord)
+        lx=lapply(bamlist,function(bam){
+            qsel = (mcols(bam[[1]])$mapq > mapq)
+            if(any(is.na(qsel))) qsel = T
+            select = (seqnames(bam[[1]])==chr) & qsel
+            pluscoord=start(bam[[1]][select])
+            qsel = (mcols(bam[[2]])$mapq > mapq)
+            if(any(is.na(qsel))) qsel = T
+            select = (seqnames(bam[[2]])==chr) & qsel
+            minuscoord=start(bam[[2]][select])
+            list(plus=pluscoord,minus=minuscoord)
+        })
+        names(lx)=bamnames
+        lx
     })
     names(allreads)=obschrnames
 

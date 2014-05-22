@@ -2,7 +2,7 @@
 #commonfile
 source(commonfile)
 #pwmfile
-load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
+#load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
 load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #outdir
@@ -26,12 +26,14 @@ sumtr <-function(x){
 }
 
 evalsvs <- function(pos.mat,neg.mat,wt){
-    svps=suppressMessages(wt[(1:(2*wsize))+2]%*%pos.mat)
-    svns=suppressMessages(wt[(2*wsize+1):(4*wsize)+2]%*%neg.mat)
+    svps=suppressMessages(wt[(1:nrow(pos.mat))+2]%*%pos.mat)
+    svns=suppressMessages(wt[(nrow(pos.mat)+1):(2*nrow(pos.mat))+2]%*%neg.mat)
     svps + svns + wt[1] + (sumtr(colSums(pos.mat)+colSums(neg.mat))+1) * wt[2]
 }
 
-posbgct = rep(0,2*wsize)
+load(file.path(datadir,paste0('background.tf',pwmid,'-',seqnames(genome)[1],'.RData')))
+
+posbgct = rep(0,nrow(pos.mat))
 
 neglis=do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
     print(i)
@@ -49,8 +51,8 @@ negcts=do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),fu
 }))
 
 rowsizes = rep(0,length(validpos))
-posct=rep(0,2*wsize)
-negct=rep(0,2*wsize)
+posct=rep(0,nrow(pos.mat))
+negct=rep(0,nrow(pos.mat))
 
 for(i in 1:length(validpos)){
     print(i)
@@ -145,13 +147,22 @@ df.all=data.frame(chr=chrs.vec,coord=coords.vec,pwm=allpws,shape=capf(allsvs),sc
 df.bg=df.all[passed.cutoff,]
 
 pwname.short = gsub("[[:punct:]]","",pwmname)
+if(match.rc){
+    pwname.short=paste0(pwname.short,'.RC')
+}
 
 write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.csv')))
 write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.all.csv')))
+if(dump.bed){
+    ss1=paste(df.all$chr,as.integer(df.all$coord),as.integer(df.all$coord) + ncol(ipr), pwname.short, floor(as.numeric(df.all$purity)*1000), c('+','-')[match.rc+1],sep='\t')
+    trackline=paste0('track name=',pwname.short,' description=\"PIQ calls for ',pwname.short,' \" useScore=1')
+    writeLines(c(trackline,ss1),file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.all.bed')))
+}
 
 laymat = matrix(c(1,4,2,3),2,2,byrow=T)
 
 pdf(file.path(outdir,paste0(pwmid,'-',pwname.short,'-diag.pdf')),10,7)
+pwmin = pwmin + runif(length(pwmin))*1e-5
 seqLogo(t(t(pwmin)/colSums(pwmin)))
 layout(laymat)
 xseq=seq(1,length(purity),length=1000)
@@ -180,7 +191,7 @@ plot(density(log(allcts+1,10),bw=0.1),type='l',xlab='counts',ylab='density',main
 points(density(log(negcts+1,10),bw=0.1),type='l',col='red')
 dev.off()
 
-if(wsize > 200){
+if(dump.chropen & wsize > 200){
 center = c(wsize + (-199:199))
 bgpluscts = do.call(c,lapply(list.files(datadir,paste0('background.tf',pwmid,'-')),function(i){
     load(file.path(datadir,i))
@@ -204,5 +215,5 @@ prank2=1/(1+exp(-log(prank)+log(1-prank)+1))
 pio.plus = log((sum(pluscts[pwsub]*prank2)/sum(prank2))/(mean(bgpluscts[pwsub])))/log(2)
 pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts[pwsub])))/log(2)
 pio.value = (pio.plus+pio.neg)*2
-writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-chropen.txt')))
+writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-',pwname.short,'-chropen.txt')))
 }

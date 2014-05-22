@@ -4,13 +4,15 @@ source(commonfile)
 #bamfile
 load(bamfile)
 #pwmfile
-load(paste0(pwmdir,pwmid,'.pwmout.RData'))
+#load(paste0(pwmdir,pwmid,'.pwmout.RData'))
 #tmpdir
+
+bamnames = names(allreads[[1]])
 
 coords2=sapply(coords.short,flank,width=wsize,both=T)
 
 obschrnames=names(allreads)
-preads=allreads[[obschrnames[1]]]$plus
+preads=allreads[[obschrnames[1]]][[1]]$plus
 cutat=max(sort(rle(preads)$lengths,T)[1000],1)
 
 #stablize the variance (helps when there are few high coverage sites).
@@ -38,8 +40,10 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
     cwidth = width(coords[[1]][1])
     obschrnames=names(allreads)
     validchr = obschrnames[which(obschrnames%in%ncoords)]
-    readcov=sapply(validchr,function(i){length(allreads[[i]]$plus)+length(allreads[[i]]$minus)})/seqlengths(genome)[validchr]
-    readfact = readcov/readcov[1]
+    readcov=lapply(1:length(bamnames),function(j){
+        sapply(validchr,function(i){length(allreads[[i]][[j]]$plus)+length(allreads[[i]][[j]]$minus)})/seqlengths(genome)[validchr]
+    })
+    readfact = lapply(readcov,function(i){i/i[1]})
     slen = seqlengths(genome)
     scrd =sapply(coords,length)
     minbgs=floor(max(10000,sum(scrd))*(scrd/sum(scrd)));
@@ -61,39 +65,45 @@ makeTFmatrix <- function(coords,prefix='',offset=0){
         }else{
             chrcoord=coords[[chr]]
         }
-	pluscoord=allreads[[chr]]$plus
-	minuscoord=allreads[[chr]]$minus
-        if(length(pluscoord)>0){
-            rre = rle(sort(pluscoord))
-            irp=IRanges(start=rre$values,width=1)
-            fos=findOverlaps(chrcoord,irp)
-            uquery=queryHits(fos)
-            querycoord=rre$values[subjectHits(fos)]
-            uoffset = querycoord-start(chrcoord)[uquery]+1
-            rval= rre$lengths[subjectHits(fos)] / readfact[chr]
-            pos.triple = cbind(round(uquery),round(uoffset),tfun(rval))
-            pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
-        }else{
-            pos.triple=cbind(1,1,0)
-            pos.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
-        }
+        pos.mat = do.call(rBind,lapply(1:length(bamnames),function(i){
+            pluscoord=allreads[[chr]][[i]]$plus
+            if(length(pluscoord)>0){
+                rre = rle(sort(pluscoord))
+                irp=IRanges(start=rre$values,width=1)
+                fos=findOverlaps(chrcoord,irp)
+                uquery=queryHits(fos)
+                querycoord=rre$values[subjectHits(fos)]
+                uoffset = querycoord-start(chrcoord)[uquery]+1
+                rval= rre$lengths[subjectHits(fos)] / readfact[[i]][chr]
+                pos.triple = cbind(round(uquery),round(uoffset),tfun(rval))
+                pos.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
+            }else{
+                pos.triple=cbind(1,1,0)
+                pos.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
+            }
+            pos.mat
+        }))
     #
-        if(length(minuscoord)>0){
-            rre = rle(sort(minuscoord))
-            irp=IRanges(start=rre$values,width=1)
-            fos=findOverlaps(chrcoord,irp)
-            uquery=queryHits(fos)
-            querycoord=rre$values[subjectHits(fos)]
-            uoffset = querycoord-start(chrcoord)[uquery]+1
-            rval= rre$lengths[subjectHits(fos)] / readfact[chr]
-            neg.triple = cbind(round(uquery),round(uoffset),tfun(rval))
-            neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
-        }else{
-            neg.triple=cbind(1,1,0)
-            neg.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
-        }
+        neg.mat = do.call(rBind,lapply(1:length(bamnames),function(i){
+            minuscoord=allreads[[chr]][[i]]$minus
+            if(length(minuscoord)>0){
+                rre = rle(sort(minuscoord))
+                irp=IRanges(start=rre$values,width=1)
+                fos=findOverlaps(chrcoord,irp)
+                uquery=queryHits(fos)
+                querycoord=rre$values[subjectHits(fos)]
+                uoffset = querycoord-start(chrcoord)[uquery]+1
+                rval= rre$lengths[subjectHits(fos)] / readfact[[i]][chr]
+                neg.triple = cbind(round(uquery),round(uoffset),tfun(rval))
+                neg.mat=sparseMatrix(i=round(uoffset),j=round(uquery),x=tfun(rval),dims=c(2*wsize,length(chrcoord)),giveCsparse=T)
+            }else{
+                neg.triple=cbind(1,1,0)
+                neg.mat=Matrix(0,nrow=2*wsize,ncol=length(chrcoord))
+            }
+            neg.mat
+        }))
 #
-        save(pos.mat,neg.mat,pos.triple,neg.triple,file=paste0(tmpdir,'/',pwmid,'/',prefix,'tf',pwmid,'-',chr,'.RData'))
+        save(pos.mat,neg.mat,file=paste0(tmpdir,'/',pwmid,'/',prefix,'tf',pwmid,'-',chr,'.RData'))
 	gc()
     }
 }
