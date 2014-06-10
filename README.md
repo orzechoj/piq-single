@@ -10,6 +10,20 @@ common.r
 -----
 MODIFY genome to fit your data, match bis("BSgenome.*") to your genome
 
+As of bioconductor 2.14 some of the package names have changed. Description below:
+
+Organism | package name | description
+----------|---------------|--------------
+Human | BSgenome.Hsapiens.UCSC.hg19.masked | Human genome + repeatmask
+Human | BSgenome.Hsapiens.UCSC.hg19| Human genome (set mapq=0 or blacklist)
+Mouse | BSgenome.Mmusculus.UCSC.mm10| Mouse genome (set mapq=0 or blacklist)
+Yeast | BSgenome.Scerevisiae.UCSC.sacCer2 | Yeast (set mapq=0)
+
+In general we suggest repeatmasking the genome when using unique maps (mapq>=1). hg19.masked does this by default for mm10 and sacCer2, the masked genomes do not have repeatmask, and we'd suggest blacklisting them via a blacklist or use non-unique maps. 
+
+
+
+
 input files
 ----
 use jasparfix.txt in the pwms folder (all JASPAR including PBM hits) for a comprehensive list. If for whatever reason you only want JASPAR CORE hits, use jaspar.txt.
