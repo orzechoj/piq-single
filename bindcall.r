@@ -129,7 +129,7 @@ neg.scores = pwb + capf(neglis)*opt.pwm.weight$minimum
 maxl=length(scores)
 enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores)))/(1:maxl)*ct.ratio
 purity = 1/(enrich.ratio+1)
-num.passed=rev(which(purity>purity.cut))[1]+50
+num.passed=min( rev(which(purity>purity.cut))[1]+50 , length(scores) )
 if(is.na(num.passed)){num.passed=50}
 cutv=sort(scores,decreasing=T)[num.passed]
 passed.cutoff = scores > cutv
