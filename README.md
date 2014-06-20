@@ -75,15 +75,9 @@ If you have multiple experiments in the same experimental condition but differen
 
 If you have control experiments such as genomic DNA or naked DNase-I digestion and want to know if your results are significant with respect to control. Do the following:
 
-1. Run PIQ once on your training data normally, with the exception that the temporary directory (/scratch/tmp in the example above) is a non-temp directory such as (/cluster/thashim/training.run)
+    `Rscript pertf.bg.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/motif.matches/ /scratch/tmp/ /cluster/thashim/130130.mm10.d0/ /cluster/thashim/PIQ/d0.RData /cluter/thashim/PIQ/control.RData 139`
 
-2. Run PIQ on your background data once using your background data, with a separate temp directory such as /cluster/thashim/background.run
-
-3. Run bindcall.standalone.r invoking the following arguments
-
-    `Rscript bindcall.standalone.r /cluster/thashim/basepiq/common.r /cluster/thashim/PIQ/motif.matches/ /cluster/thashim/training.run/ /cluster/thashim/background.output/ /cluster/thashim/background.run 139`
-
-    This will use the profile / footprint learned from the training data and output scores on the background track.
+    This will use the profile / footprint learned from the training data (d0.RData) and output scores over the control data.
 
 
 #### Train and test separately
