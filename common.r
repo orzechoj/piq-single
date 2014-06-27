@@ -37,6 +37,11 @@ nkmer = 5000000
 # Optional: location of a whitelist directory. PWM matches will only be used if their window completely fits in the whitelist.
 # whitelist should be in .bed format.
 
+# WARNING: Do not use the whitelist to subset regions of interest in the genome such as DNase hypersensitive regions.
+# This breaks the PIQ background model and will result in reduced performance
+# This is only meant to be used to remove regions that have mapping, repeat or experiment problems.
+# In all other cases, run PIQ with no whitelist, and subselect binding sites after calling.
+
 #whitelist = '/cluster/thashim/PIQ/capture.mm10.bed'
 whitelist = NULL
 
