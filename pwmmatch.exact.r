@@ -29,6 +29,7 @@ if(!overwrite & file.exists(paste0(outdir,pwmid,'.pwmout.RData'))){
 
 importJaspar <- function(file=myloc) {
   vec <- readLines(file)
+  vec <- gsub("\t"," ",vec)
   vec <- gsub("\\[|\\]", "", vec)
   start <- grep(">", vec); end <- grep(">", vec) - 1
   pos <- data.frame(start=start, end=c(end[-1], length(vec)))
