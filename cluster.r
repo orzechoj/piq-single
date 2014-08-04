@@ -158,18 +158,18 @@ makesvlite <- function(filename,label,rot.pos,rot.neg,minread=5){
     pms=as.matrix(summary(pos.mat))
     pns=as.matrix(summary(neg.mat))
     cv=converter(pms,pns,rct,nrow(pos.mat),label)
-    cv[rct>(sumtr(minread)+1)]
+    cv[rct>=(sumtr(minread)+1)]
 }
 
 if(fast.mode){
 
 validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'),full.names=T)
 vptrain=validpos
-allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=10*wsize/1000,rot.pos=rot.pos,rot.neg=rot.neg))
+allpos=do.call(c,lapply(vptrain,makesvlite,label=1,minread=max(10*wsize/1000,1),rot.pos=rot.pos,rot.neg=rot.neg))
 
 validneg = list.files(datadir,paste0('background.tf',pwmid,'-'),full.names=T)
 vntrain=validneg
-allneg=do.call(c,lapply(vntrain,makesvlite,label= -1,minread= -1, rot.pos=rot.pos,rot.neg=rot.neg))
+allneg=do.call(c,lapply(vntrain,makesvlite,label= -1,minread= 0, rot.pos=rot.pos,rot.neg=rot.neg))
 
 writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 
@@ -182,7 +182,7 @@ writeLines(c(allpos,allneg),file.path(tmpdir,paste0(pwmid,'-svlite.txt')))
 itmax=min(5e+07,500*length(allpos))
 
 wsz = 2*nrow(pos.mat)+2
-sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=wsz,random_seed=1,lambda=10000/length(allpos),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
+sv.fit=sofia(file.path(tmpdir,paste0(pwmid,'-svlite.txt')),verbose=T,dimensionality=wsz,random_seed=1,lambda=1000/length(allpos),iterations=itmax,learner_type='logreg-pegasos',eta_type='basic',loop_type='balanced-stochastic')
 
 vpos=suppressMessages(as.vector((sv.fit$weights[2+(1:(nrow(pos.mat)))])))
 vneg=suppressMessages(as.vector((sv.fit$weights[2+(1:(nrow(pos.mat)))+(nrow(pos.mat))])))

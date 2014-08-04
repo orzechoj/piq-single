@@ -11,8 +11,10 @@ load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 # make call
 datadir = paste0(tmpdir,'/',pwmid,'/')
 
-osvr=order(-sv.rotate[-(1:2)])+2
-sv.rotate[osvr[1:(2*ncol(pwmin))]] = sort(sv.rotate,decreasing=T)[(2*ncol(pwmin)+1)]
+if(avoid.seqbias){
+    osvr=order(-sv.rotate[-(1:2)])+2
+    sv.rotate[osvr[1:(2*ncol(pwmin))]] = sort(sv.rotate,decreasing=T)[(2*ncol(pwmin)+1)]
+}
 
 validpos = list.files(datadir,paste0('positive.tf',pwmid,'-'))
 chrids=match(sapply(strsplit(validpos,'[.-]'),function(i){i[3]}),ncoords)
@@ -118,8 +120,9 @@ pwb = sample(allpws,length(neglis),replace=T)
 ct.ratio = length(allpws)/length(neglis)
 
 stepsz=0.1
-alloptim=sapply(seq(stepsz,50,by=stepsz),nenrich)#
-center=(which.min(alloptim))*stepsz
+wtseq = seq(2,50,by=stepsz)
+alloptim=sapply(wtseq,nenrich)#
+center=wtseq[which.min(alloptim)]
 opt.pwm.weight=optimize(nenrich,c(max(1e-5,center-stepsz),center+stepsz))
 
 erpen=1
@@ -173,7 +176,7 @@ plot(posct,type='l',xlab='offset from motif match',ylab='counts',main="observed 
 points(negct,col='red',type='l')
 points(posbgct*ct.ratio,col='green',type='l')
 legend('bottomright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
-plot(seq(stepsz,50,by=stepsz),1/(1+alloptim*ct.ratio),type='l',main='Sequence dependence vs max purity',xlab='inverse sequence dependence',ylab='max purity',log='x')
+plot(wtseq,1/(1+alloptim*ct.ratio),type='l',main='Sequence dependence vs max purity',xlab='inverse sequence dependence',ylab='max purity',log='x')
 abline(v=opt.pwm.weight$minimum)
 #
 layout(matrix(c(1,3,4,2,2,2),2,3,byrow=T))

@@ -58,4 +58,4 @@ wsize = 1000
 fast.mode = T
 
 #seqbias mode
-avoid.seqbias=T
+avoid.seqbias = F

@@ -13,7 +13,7 @@ coords2=sapply(coords.short,flank,width=wsize,both=T)
 
 obschrnames=names(allreads)
 preads=allreads[[obschrnames[1]]][[1]]$plus
-cutat=max(sort(rle(preads)$lengths,T)[1000],1)
+cutat=10
 
 #stablize the variance (helps when there are few high coverage sites).
 tfun <- function(x){
