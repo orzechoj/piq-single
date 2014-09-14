@@ -53,7 +53,7 @@ suppressMessages(require(Matrix,quietly=T))
 
 
 #window size
-wsize = 1000
+wsize = 300
 #fast mode
 fast.mode = T
 

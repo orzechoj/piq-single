@@ -4,7 +4,7 @@ source(commonfile)
 #pwmfile
 #load(file.path(pwmdir,paste0(pwmid,'.pwmout.RData')))
 #tmpdir
-load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
+#load(file.path(tmpdir,paste0(pwmid,'.svout.RData')))
 #outdir
 
 #####
@@ -125,10 +125,13 @@ alloptim=sapply(wtseq,nenrich)#
 center=wtseq[which.min(alloptim)]
 opt.pwm.weight=optimize(nenrich,c(max(1e-5,center-stepsz),center+stepsz))
 
+if(!exists('bcoef',mode='numeric')){
+bcoef = opt.pwm.weight$minimum
+}
 erpen=1
 
-scores=allpws+capf(allsvs)*opt.pwm.weight$minimum
-neg.scores = pwb + capf(neglis)*opt.pwm.weight$minimum
+scores=allpws+capf(allsvs)*bcoef
+neg.scores = pwb + capf(neglis)*bcoef
 maxl=length(scores)
 enrich.ratio=erpen*(findInterval(sort(-scores)[1:maxl],sort(-neg.scores)))/(1:maxl)*ct.ratio
 purity = 1/(enrich.ratio+1)
@@ -154,6 +157,8 @@ if(match.rc){
     pwname.short=paste0(pwname.short,'.RC')
 }
 
+save(bcoef, sv.rotate, file = file.path(outdir,paste0(pwmid,'-',pwname.short,'-params.RData')))
+
 write.csv(df.bg,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.csv')))
 write.csv(df.all,file=file.path(outdir,paste0(pwmid,'-',pwname.short,'-calls.all.csv')))
 if(dump.bed){
@@ -177,14 +182,14 @@ points(negct,col='red',type='l')
 points(posbgct*ct.ratio,col='green',type='l')
 legend('bottomright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
 plot(wtseq,1/(1+alloptim*ct.ratio),type='l',main='Sequence dependence vs max purity',xlab='inverse sequence dependence',ylab='max purity',log='x')
-abline(v=opt.pwm.weight$minimum)
+abline(v=bcoef)
 #
 layout(matrix(c(1,3,4,2,2,2),2,3,byrow=T))
 plot(density(scores,bw=0.1),type='l',xlab='score',ylab='density',main='Scores for \n motif match (black) vs background (red)')
 points(density(neg.scores,bw=0.1),type='l',col='red')
 abline(v=cutv)
 spos = scores
-npos = pwb+capf(neglis)*opt.pwm.weight$minimum
+npos = pwb+capf(neglis)*bcoef
 samp=sample(1:length(allpws),50000,replace=T)
 samp.neg=sample(1:length(pwb),50000,replace=T)
 plot(allpws[samp],capf(allsvs[samp]),pch=c(46,20)[passed.cutoff[samp]+1],xlab='PWM score',ylab='DNase score',main='Distribution of PWM and DNase scores in pwm match (black) vs ctrl (red)\n with called sites (bold)')
@@ -220,3 +225,5 @@ pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts[pwsub])))/l
 pio.value = (pio.plus+pio.neg)*2
 writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-',pwname.short,'-chropen.txt')))
 }
+
+rm(bcoef)
