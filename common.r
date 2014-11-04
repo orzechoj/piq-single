@@ -57,3 +57,10 @@ flank.blacklist = T
 ###
 # blacklist repeatmask, does not work for yeast.
 remove.repeatmask = T
+
+####
+# plot options
+
+# change the window size; useful to see a close-up for the footprint
+plot.wind = wsize
+plot.bothstrand = T

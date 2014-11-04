@@ -177,10 +177,13 @@ xseq=seq(1,length(purity),length=1000)
 plot(xseq,purity[xseq],type='l',xlab='Number of sites called',ylab='Purity',main='estimated PPV vs number of calls')
 plot(sv.rotate[-(1:2)],type='l',sub=paste(sv.rotate[1],sv.rotate[2],sep=':'),xlab='offset from motif match, strands concatenated',ylab='score',main='Binding classifier')
 abline(h=0,col='red')
-plot(posct,type='l',xlab='offset from motif match',ylab='counts',main="observed counts at motif match vs background")
-points(negct,col='red',type='l')
-points(posbgct*ct.ratio,col='green',type='l')
-legend('bottomright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
+xrg = (1:length(posct)) - floor(length(posct)/2)
+plot(xrg,posct,type='l',xlab='offset from motif match',ylab='counts',main="observed counts at motif match vs background",xlim=c(-plot.wind,plot.wind),ylim=range(c(posct,posbgct*ct.ratio)))
+if(plot.bothstrand){
+    points(xrg,negct,col='red',type='l')
+}
+points(xrg,posbgct*ct.ratio,col='green',type='l')
+legend('topright',col=c('black','red','green'),lwd=1,legend=c('+strand','-strand','background'))
 plot(wtseq,1/(1+alloptim*ct.ratio),type='l',main='Sequence dependence vs max purity',xlab='inverse sequence dependence',ylab='max purity',log='x')
 abline(v=bcoef)
 #
