@@ -12,6 +12,12 @@ bamout = args[2]
 
 source(commonfile)
 
+if(exists('readGAlignmentsFromBam')){
+    readBam = readGAlignmentPairsFromBam
+}else{
+    readBam = readBamGappedAlignmentPairs
+}
+
 #nucleosome peaks at 210 bp, 400bp
 fragrange = c(0,100,150,250,350,1000)
 fragnames = paste(fragrange[-length(fragrange)],fragrange[-1],sep='-')
@@ -20,7 +26,7 @@ bamname = args[3]
 bamnames=bamname
 
 flags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
-reads = readBamGappedAlignmentPairs(bamname,param=flags)
+reads = readBam(bamname,param=flags)
 lreads= left(reads)
 rreads= right(reads)
 fraglen = end(rreads)-start(lreads)
