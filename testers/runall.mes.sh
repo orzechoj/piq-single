@@ -11,7 +11,7 @@ bampath="http://piq.csail.mit.edu/data/bams/mES.bam"
 #####
 
 tmpdir="/scratch/tmp/"
-basedir="/cluster/thashim/basepiq/"
+basedir="$(pwd)/../"
 baseoutdir="/cluster/thashim/PIQ/"
 
 pushd $basedir
@@ -34,23 +34,19 @@ wget $bampath -O $bamin 1> NUL 2> NUL
 
 #bam proc
 pushd $basedir
-if [ ! -f "$bamfile" ]; then
-    ./bam2rdata.r $commonfile $bamfile "$bamin"
-fi
+./bam2rdata.r $commonfile $bamfile "$bamin"
 popd
 
-if [ ! -f "$pwmdir" ]; then
-    mkdir $pwmdir
-    #Number of motifs to process
-    for pwmid in {1..1316}
-    do
-	echo "$basedir/pwmmatch.exact.r "$commonfile $jaspardir $pwmid $pwmdir | /usr/bin/qsub -wd $basedir/ -e $pwmdir/errfile.txt -o /dev/null -N piqpwm-$pwmid-$idname
-    done
-    cp $jaspardir $pwmdir
-    cp $commonfile $pwmdir
-    git log > $pwmdir/gitlog.txt
-    git diff > $pwmdir/gitdiff.txt
-fi
+mkdir $pwmdir
+#Number of motifs to process
+for pwmid in {1..1316}
+do
+	  echo "$basedir/pwmmatch.exact.r "$commonfile $jaspardir $pwmid $pwmdir | /usr/bin/qsub -wd $basedir/ -e $pwmdir/errfile.txt -o /dev/null -N piqpwm-$pwmid-$idname
+done
+cp $jaspardir $pwmdir
+cp $commonfile $pwmdir
+git log > $pwmdir/gitlog.txt
+git diff > $pwmdir/gitdiff.txt
 
 mkdir $outdir
 ##
