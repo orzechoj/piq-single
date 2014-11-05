@@ -11,7 +11,7 @@ bampath="http://piq.csail.mit.edu/data/bams/k562.bam"
 #####
 
 tmpdir="/scratch/tmp/"
-basedir="$(pwd -P)/../"
+basedir="$(readlink -f $(pwd -P)/../)"
 baseoutdir="/cluster/thashim/PIQ/"
 
 pushd $basedir
