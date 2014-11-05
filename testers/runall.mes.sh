@@ -30,7 +30,7 @@ jaspardir="$basedir/pwms/jasparfix.txt"
 #Directory in which the PWM files should be dumped
 pwmdir="$baseoutdir/$idname.pwms/"
 
-wget $bampath -O $bamin
+wget $bampath -O $bamin 1> NUL 2> NUL
 
 #bam proc
 pushd $basedir
