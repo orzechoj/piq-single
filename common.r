@@ -4,11 +4,11 @@ source('common.global.r')
 # Check before running
 
 #minimum map quality
-mapq = 1
+mapq = -1
 
 # load genome file
-suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19.masked"))
-genome = BSgenome.Hsapiens.UCSC.hg19.masked
+suppressMessages(bis("BSgenome.Hsapiens.UCSC.hg19"))
+genome = BSgenome.Hsapiens.UCSC.hg19
 
 #####
 # Run mode options
@@ -56,7 +56,7 @@ flank.blacklist = T
 
 ###
 # blacklist repeatmask, does not work for yeast.
-remove.repeatmask = T
+remove.repeatmask = F
 
 ####
 # plot options
