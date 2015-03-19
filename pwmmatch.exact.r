@@ -87,7 +87,10 @@ coords.list = lapply(chrstr,function(i){
             flsize = wsize*flank.blacklist
             ir=intersect(IRanges(1,length(gi)),reduce(IRanges(blacktable[blacksel,2]-flsize,blacktable[blacksel,3]+flsize)))
             mask=Mask(length(gi),start(ir),end(ir))
-            masks(gi) = append(masks(gi),mask)
+            if(is.null(masks(gi)))
+                masks(gi) = mask
+            else
+                masks(gi) = append(masks(gi),mask)
         }
     }
     if(exists('whitetable')){
@@ -100,10 +103,16 @@ coords.list = lapply(chrstr,function(i){
             rir=reduce(IRanges(start(nir)-wsize,end(nir)+wsize))
             maskr=intersect(rir,air)
             mask = Mask(length(gi),start(maskr),end(maskr))
-            masks(gi) = append(masks(gi),mask)
+            if(is.null(masks(gi)))
+                masks(gi) = mask
+            else
+                masks(gi) = append(masks(gi),mask)
         }else{
             mask = Mask(length(gi),1,length(gi))
-            masks(gi) = append(masks(gi),mask)
+            if(is.null(masks(gi)))
+                masks(gi) = mask
+            else
+                masks(gi) = append(masks(gi),mask)
         }
     }
     mpwm=matchPWM(pwuse,gi,min.score=motifcut)
@@ -160,7 +169,10 @@ coords.list = lapply(chrstr,function(i){
             flsize = wsize*flank.blacklist
             ir=intersect(IRanges(1,length(gi)),reduce(IRanges(blacktable[blacksel,2]-flsize,blacktable[blacksel,3]+flsize)))
             mask=Mask(length(gi),start(ir),end(ir))
-            masks(gi) = append(masks(gi),mask)
+            if(is.null(masks(gi)))
+                masks(gi) = mask
+            else
+                masks(gi) = append(masks(gi),mask)
         }
     }
     if(exists('whitetable')){
@@ -173,10 +185,16 @@ coords.list = lapply(chrstr,function(i){
             rir=reduce(IRanges(start(nir)-wsize,end(nir)+wsize))
             maskr=intersect(rir,air)
             mask = Mask(length(gi),start(maskr),end(maskr))
-            masks(gi) = append(masks(gi),mask)
+            if(is.null(masks(gi)))
+                masks(gi) = mask
+            else
+                masks(gi) = append(masks(gi),mask)
         }else{
             mask = Mask(length(gi),1,length(gi))
-            masks(gi) = append(masks(gi),mask)
+            if(is.null(masks(gi)))
+                masks(gi) = mask
+            else
+                masks(gi) = append(masks(gi),mask)
         }
     }
     mpwm=matchPWM(pwuse,gi,min.score=motifcut)
