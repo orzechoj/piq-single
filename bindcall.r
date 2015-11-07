@@ -223,8 +223,8 @@ negcts = do.call(c,lapply(list.files(datadir,paste0('positive.tf',pwmid,'-')),fu
 pwsub=order(-allpws)[1:min(10000,length(allpws))]
 prank = purity[rank(-scores)][pwsub]
 prank2=1/(1+exp(-log(prank)+log(1-prank)+1))
-pio.plus = log((sum(pluscts[pwsub]*prank2)/sum(prank2))/(mean(bgpluscts[pwsub])))/log(2)
-pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts[pwsub])))/log(2)
+pio.plus = log((sum(pluscts[pwsub]*prank2)/sum(prank2))/(mean(bgpluscts)))/log(2)
+pio.neg = log((sum(negcts[pwsub]*prank2)/sum(prank2))/(mean(bgnegcts)))/log(2)
 pio.value = (pio.plus+pio.neg)*2
 writeLines(paste0(pwmid,',',pio.value),file.path(outdir,paste0(pwmid,'-',pwname.short,'-chropen.txt')))
 }
