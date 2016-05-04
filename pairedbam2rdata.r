@@ -12,8 +12,8 @@ bamout = args[2]
 
 source(commonfile)
 
-if(exists('readGAlignmentsFromBam')){
-    readBam = readGAlignmentPairsFromBam
+if(exists('readGAlignmentPairs')){
+    readBam = readGAlignmentPairs
 }else{
     readBam = readBamGappedAlignmentPairs
 }
@@ -27,8 +27,9 @@ bamnames=bamname
 
 flags = ScanBamParam(flag=scanBamFlag(isUnmappedQuery=F,isDuplicate=F,isNotPassingQualityControls=F),what=c('mapq'))
 reads = readBam(bamname,param=flags)
-lreads= left(reads)
-rreads= right(reads)
+subs = strand(first(reads))=='+'
+lreads= first(reads)[subs]
+rreads= last(reads)[subs]
 fraglen = end(rreads)-start(lreads)
 lstart = start(lreads)
 rstart = end(rreads)
