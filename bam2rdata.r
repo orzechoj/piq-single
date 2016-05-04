@@ -12,8 +12,8 @@ bamout = args[2]
 
 source(commonfile)
 
-if(exists('readGAlignmentsFromBam')){
-    readBam = readGAlignmentsFromBam
+if(exists('readGAlignments')){
+    readBam = readGAlignments
 }else{
     readBam = readBamGappedAlignments
 }
