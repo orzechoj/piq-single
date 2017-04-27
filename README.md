@@ -1,3 +1,7 @@
+- Cloned from https://bitbucket.org/thashim/piq-single
+- Fixed a bug in pairedbam2rdata.r (2017-04-27)
+
+
 IMPORTANT - READ ME
 ======================================
 
