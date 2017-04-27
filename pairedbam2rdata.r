@@ -41,11 +41,11 @@ allreads=lapply(obschrnames,function(chr){
             qsel = (mcols(lreads)$mapq > mapq)
             if(any(is.na(qsel))) qsel = T
             fsel = fraglen > fragrange[fr] & fraglen <= fragrange[fr+1]
-            select = (seqnames(lreads)==chr) & qsel & fsel
+            select = (array(seqnames(lreads))==chr) & qsel & fsel
             pluscoord=lstart[which(select)]
             qsel = (mcols(rreads)$mapq > mapq)
             if(any(is.na(qsel))) qsel = T
-            select = (seqnames(rreads)==chr) & qsel & fsel
+            select = (array(seqnames(rreads))==chr) & qsel & fsel
             minuscoord=rstart[which(select)]
             list(plus=pluscoord,minus=minuscoord)
         })
